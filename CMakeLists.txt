@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 2.8)
 
 project(alignement)
-#add_subdirectory(ext/Super4PCS ${CMAKE_CURRENT_BINARY_DIR}/super4PCS)
+OPTION (SUPER4PCS_COMPILE_TESTS FALSE)
+OPTION (SUPER4PCS_COMPILE_DEMOS FALSE)
+add_subdirectory(ext/Super4PCS ${CMAKE_CURRENT_BINARY_DIR}/super4PCS)
 add_subdirectory(projects/alignement ${CMAKE_CURRENT_BINARY_DIR}/alignement)
 
 project(warping)
