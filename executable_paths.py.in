@@ -1,0 +1,5 @@
+super4pcs = "${SUPER4PCS_EXE}"
+mshdist   = "${MSHDIST_EXE}"
+tetgen    = "${TETGEN_EXE}"
+mmgs      = "${MMGS_EXE}"
+mmg3d     = "${MMG3D_EXE}"

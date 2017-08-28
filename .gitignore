@@ -1,3 +1,4 @@
 build
 *~
 ext/
+executable_paths.py
