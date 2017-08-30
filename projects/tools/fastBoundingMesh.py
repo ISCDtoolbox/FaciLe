@@ -5,74 +5,16 @@ import os
 import msh
 import sys
 
-"""
-os.system("powercrust -i " + root + ".xyz > log.txt 2>&1")
-os.system("LC_ALL=C meshlab pc.off >> log.txt 2>&1")
-os.system("boundingmesh -v 200 -d Outward pc.off >> log.txt 2>&1")
-"""
-
-def readObj(inFile):
-    verts, tris = [],[]
-    with open(inFile) as f:
-        for l in f.readlines():
-            L = l.strip()
-            if len(L):
-                L = L.split()
-                if L[0] == "v":
-                    verts.append([float(x) for x in L[1:]] + [0])
-                if L[0] == "f":
-                    tris.append([int(x)-1 for x in L[1:]] + [0])
-    return np.array(verts), np.array(tris)
-def readOff(offFile):
-    with open(offFile) as f:
-        LINES = f.readlines()
-        if 'OFF' not in LINES[0]:
-            print 'Not a valid OFF header'
-        n_verts, n_faces, n_dontknow = tuple([int(s) for s in LINES[1].strip().split(' ')])
-        verts = []
-        for i_vert in range(n_verts):
-            verts.append([float(s) for s in LINES[i_vert+2].strip().split()])
-        faces = []
-        for i_face in range(n_faces):
-            faces.append([int(s) for s in LINES[n_verts + i_face+2].strip().split()[1:]])
-        return np.array(verts), np.array(faces)
 def binaryToXYZ(data, xyzFile):
     X,Y,Z = data.nonzero()
     with open(xyzFile,"w") as f:
         for x,y,z in zip(X,Y,Z):
             f.write(" ".join([str(x), str(y), str(z)]) + "\n")
-
 def coorToInd(pt,res,xmin,xmax,ymin,ymax,zmin,zmax):
     pt[0] = 5+int( res*(pt[0]-xmin)/(xmax-xmin) - 1e-8)
     pt[1] = 5+int( res*(pt[1]-ymin)/(ymax-ymin) - 1e-8)
     pt[2] = 5+int( res*(pt[2]-zmin)/(zmax-zmin) - 1e-8)
     return pt
-def addCube(xmin,xmax,ymin,ymax,zmin,zmax,ref=100):
-    cubeVerts = np.array([
-        [xmin, ymin, zmin],
-        [xmin, ymin, zmax],
-        [xmax, ymin, zmin],
-        [xmax, ymin, zmax],
-        [xmin, ymax, zmin],
-        [xmin, ymax, zmax],
-        [xmax, ymax, zmin],
-        [xmax, ymax, zmax]
-    ])
-    cubeTris = np.array([
-        [0,1,2],
-        [1,3,2],
-        [4,6,5],
-        [5,6,7],
-        [1,5,3],
-        [3,5,7],
-        [2,6,4],
-        [0,2,4],
-        [3,7,6],
-        [2,3,6],
-        [0,4,1],
-        [1,4,5]
-    ])
-    return np.insert(cubeVerts,3,ref,axis=1), np.insert(cubeTris,3,ref,axis=1)
 def ptsToXYZCubes(pts, res=100):
     data = np.zeros(shape=(res+10,res+10,res+10), dtype="bool_")
     xmin,xmax = np.min(pts[:,0]), np.max(pts[:,0])
@@ -84,7 +26,6 @@ def ptsToXYZCubes(pts, res=100):
     for pt in tmpPts:
         data[pt[0], pt[1], pt[2]] = True
     return data, resultingScale
-
 def indInfCorner(i,res):
     return [res-1+j-i for j in range(i+1)], [j for j in range(i+1)]
 def indInfCenter(i,res):
@@ -215,7 +156,6 @@ def carveSuperDiagonal(data, newData):
         transformedNewData = newData[:,:,::-1]
         if not np.any(transformedData[d[:,0],d[:,1],d[:,2]]):
             transformedNewData[d[:,0],d[:,1],d[:,2]]=False
-
 def spaceCarve(data):
     newData = np.invert(np.zeros(shape=data.shape, dtype="bool_"))
 
@@ -236,14 +176,6 @@ def spaceCarve(data):
     carveAxis(data, newData, (2,1,0))
 
     return newData
-
-def command(cmd, displayOutput=False):
-    err = os.system(cmd) if displayOutput else os.system(cmd + " > tmp_out.txt 2>tmp_err.txt")
-    if err:
-        print "An error happened while executing:\n"+cmd+"\nLook in tmp_out.txt or tmp_err.txt"
-        sys.exit()
-    else:
-        os.system("rm tmp_out.txt tmp_err.txt >/dev/null 2>&1")
 
 resolution = 71
 
