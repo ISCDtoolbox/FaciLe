@@ -1,6 +1,3 @@
-[submodule "ext/Super4PCS"]
-	path = ext/Super4PCS
-	url = https://github.com/nmellado/Super4PCS.git
 [submodule "ext/ISCD_Commons"]
 	path = ext/ISCD_Commons
 	url = https://github.com/ISCDtoolbox/Commons.git
@@ -22,12 +19,6 @@
 [submodule "projects/alignement/ext/Commons"]
 	path = projects/alignement/ext/Commons
 	url = https://github.com/ISCDtoolbox/Commons.git
-[submodule "projects/alignement/libICP"]
-	path = projects/alignement/libICP
-	url = https://github.com/symao/libicp.git
-[submodule "projects/alignement/-f"]
-	path = projects/alignement/-f
-	url = https://github.com/symao/libicp.git
 [submodule "projects/alignement/ext/libICP"]
 	path = projects/alignement/ext/libICP
 	url = https://github.com/symao/libicp.git
