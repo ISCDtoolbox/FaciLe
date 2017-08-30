@@ -1,10 +1,15 @@
 """
-Python implementation of 3D iterative closest point. Includes an SVD-based least-squared best-fit algorithm.
+ICP implementation taken from:
 https://github.com/ClayFlannigan/icp
 """
+
 import numpy as np
 from scipy.spatial.distance import cdist
 import os
+
+import sys
+sys.path.append("../tools")
+import msh
 
 def best_fit_transform(A, B):
     '''
@@ -112,7 +117,6 @@ def icp(A, B, init_pose=None, max_iterations=100, tolerance=0.001):
     T,rot,trans = best_fit_transform(A, src[0:3,:].T)
     return T
 
-
 def align_data(d, ref, offset=None, write=False):
     aD = np.zeros((len(d),len(d[0]),3))
     for i,x in enumerate(d):
@@ -127,3 +131,22 @@ def align_data(d, ref, offset=None, write=False):
                 for z in aD[i]:
                     f.write(str(z[0]) + " " + str(z[1]) + " " + str(z[2]) + "\n")
     return aD
+
+if __name__ == "__main__":
+    maxIt = 200
+    tol   = 0.0001
+    nPoints = 5000
+
+    sourceMesh = msh.Mesh(sys.argv[1])
+    targetMesh = msh.Mesh(sys.argv[2])
+
+    sourceStep = len(sourceMesh.verts)/nPoints+1
+    targetStep = len(targetMesh.verts)/nPoints+1
+
+    sourceVerts = sourceMesh.verts[::sourceStep,:-1]
+    targetVerts = targetMesh.verts[::targetStep,:-1]
+
+    MAT = icp(sourceVerts, targetVerts, max_iterations=maxIt, tolerance=tol)
+
+    sourceMesh.verts = np.array([ np.insert(  np.dot( MAT, np.append(v[:3],[1]) )[:3], 3, 0  ) for v in sourceMesh.verts ])
+    sourceMesh.write("out.mesh")
