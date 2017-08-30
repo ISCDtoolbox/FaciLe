@@ -2,3 +2,6 @@ build
 *~
 ext/
 executable_paths.py
+*.mesh
+*.sol
+*.pyc

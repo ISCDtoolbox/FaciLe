@@ -16,3 +16,18 @@
 [submodule "ext/mmgTools"]
 	path = ext/mmgTools
 	url = https://github.com/MmgTools/mmg.git
+[submodule "projects/alignement/ext/Super4PCS"]
+	path = projects/alignement/ext/Super4PCS
+	url = https://github.com/nmellado/Super4PCS.git
+[submodule "projects/alignement/ext/Commons"]
+	path = projects/alignement/ext/Commons
+	url = https://github.com/ISCDtoolbox/Commons.git
+[submodule "projects/alignement/libICP"]
+	path = projects/alignement/libICP
+	url = https://github.com/symao/libicp.git
+[submodule "projects/alignement/-f"]
+	path = projects/alignement/-f
+	url = https://github.com/symao/libicp.git
+[submodule "projects/alignement/ext/libICP"]
+	path = projects/alignement/ext/libICP
+	url = https://github.com/symao/libicp.git
