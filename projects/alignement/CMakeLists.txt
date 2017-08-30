@@ -15,7 +15,7 @@ include_directories( ${EIGEN3_INCLUDE_DIR} )
 
 #ICP
 option(BUILD_SHARED_LIBS "" TRUE)
-configure_file(${PROJECT_SOURCE_DIR}/ext/CMakeLists.libICP.txt ${PROJECT_SOURCE_DIR}/ext/libICP/CMakeLists.txt)
+configure_file(${PROJECT_SOURCE_DIR}/ext/CMakeLists.libICP.txt ${PROJECT_SOURCE_DIR}/ext/libICP/CMakeLists.txt COPYONLY)
 add_subdirectory(${PROJECT_SOURCE_DIR}/ext/libICP ${CMAKE_CURRENT_BINARY_DIR}/libICP)
 include_directories(${PROJECT_SOURCE_DIR}/ext/libICP/src)
 link_directories(${CMAKE_BINARY_DIR}/ext/libICP)

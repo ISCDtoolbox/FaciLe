@@ -19,3 +19,6 @@
 [submodule "projects/alignement/ext/Commons"]
 	path = projects/alignement/ext/Commons
 	url = https://github.com/ISCDtoolbox/Commons.git
+[submodule "projects/alignement/ext/libICP"]
+	path = projects/alignement/ext/libICP
+	url = https://github.com/symao/libicp.git

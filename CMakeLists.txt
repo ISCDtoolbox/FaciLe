@@ -1,10 +1,11 @@
 cmake_minimum_required(VERSION 2.8)
 
-#Commons library
-add_subdirectory(${PROJECT_SOURCE_DIR}/ext/ISCD_Commons ${CMAKE_CURRENT_BINARY_DIR}/commons)
 
 #Alignement project
 add_subdirectory(projects/alignement ${CMAKE_CURRENT_BINARY_DIR}/alignement)
+
+#Commons library
+#add_subdirectory(${PROJECT_SOURCE_DIR}/ext/ISCD_Commons ${CMAKE_CURRENT_BINARY_DIR}/commons)
 
 
 #project(warping)
@@ -26,7 +27,7 @@ set(SUPER4PCS_EXE ${CMAKE_CURRENT_BINARY_DIR}/super4PCS/demos/Super4PCS/Super4PC
 #Compiled applications
 set(MORPHING_EXE  ${CMAKE_CURRENT_BINARY_DIR}/morphing/morphing)
 set(WARPING_EXE   ${CMAKE_CURRENT_BINARY_DIR}/warping/warping)
-set(ALIGN_EXE     ${CMAKE_CURRENT_BINARY_DIR}/align/align)
+set(ALIGN_EXE     ${CMAKE_CURRENT_BINARY_DIR}/alignement/align)
 #Python scripts
 set(BOUNDING_EXE  ${CMAKE_SOURCE_DIR}/projects/tools/fastBoundingMesh.py)
 #Creating the python file
