@@ -31,6 +31,7 @@ set(ALIGN_EXE     ${CMAKE_CURRENT_BINARY_DIR}/alignement/align)
 #Python scripts
 set(BOUNDING_EXE  ${CMAKE_SOURCE_DIR}/projects/tools/fastBoundingMesh.py)
 set(SHELL         ${CMAKE_SOURCE_DIR}/projects/tools/createShell.py)
+set(PYTHONICP     ${CMAKE_SOURCE_DIR}/projects/alignement/icp.py)
 
 #Creating the python file for paths
 configure_file(executable_paths.py.in ${CMAKE_SOURCE_DIR}/projects/executable_paths.py)

@@ -13,3 +13,4 @@ warping  = "${WARPING_EXE}"
 # Python scripts
 boundingMesh = "${BOUNDING_EXE}"
 shell        = "${SHELL_EXE}"
+pythonICP    = "${PYTHONICP_EXE}"
