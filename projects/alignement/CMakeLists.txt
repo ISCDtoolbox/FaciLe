@@ -5,13 +5,15 @@ project(alignement)
 option(SUPER4PCS_COMPILE_TESTS "" FALSE)
 option(SUPER4PCS_COMPILE_DEMOS "" FALSE)
 option(BUILD_SHARED_LIBS "" TRUE)
+option(IO_USE_OPENCV "Use OpenCV for texture loading" FALSE)
 add_subdirectory(${PROJECT_SOURCE_DIR}/ext/Super4PCS ${CMAKE_CURRENT_BINARY_DIR}/super4PCS)
-include_directories(${Super4PCS_INCLUDE_DIR})
+include_directories(${PROJECT_SOURCE_DIR}/ext/Super4PCS/src)
 link_directories(${Super4PCS_LIB_DIR})
 
 #Eigen
-find_package( Eigen3 REQUIRED )
-include_directories( ${EIGEN3_INCLUDE_DIR} )
+#find_package( Eigen3 HINTS ${PROJECT_SOURCE_DIR}/ext/Super4PCS/3rdparty/Eigen/cmake REQUIRED )
+#include_directories( ${EIGEN3_INCLUDE_DIR} )
+include_directories( ${PROJECT_SOURCE_DIR}/ext/Super4PCS/3rdparty/Eigen )
 
 #ICP
 option(BUILD_SHARED_LIBS "" TRUE)
