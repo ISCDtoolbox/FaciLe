@@ -330,6 +330,19 @@ class Mesh:
         mesh.computeBBox()
 
         return mesh
+    def applyMatrix(self, mat=None, matFile=None):
+        if mat is None and matFile is not None:
+            mat = np.zeros(shape=(4,4))
+            with open(matFile) as f:
+                for i,l in enumerate(f.readlines()):
+                    if i<4:
+                        elts = [float(x) for x in l.strip().split()]
+                        mat[i] = elts
+        refs = np.copy(self.verts[:,3])
+        self.verts[:,3] = 1
+        self.verts = np.dot(self.verts,mat.T)
+        self.verts[:,3]=refs
+
 
     # .mesh export functions
     def writeArray(self, path, head, array, form, firstOpening=False, incrementIndex=False):

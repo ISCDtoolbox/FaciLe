@@ -116,7 +116,7 @@ def icp(A, B, init_pose=None, max_iterations=100, tolerance=0.001):
 
     # calculate final transformation
     T,rot,trans = best_fit_transform(A, src[0:3,:].T)
-    return T
+    return T, distances
 
 def align_data(d, ref, offset=None, write=False):
     aD = np.zeros((len(d),len(d[0]),3))
@@ -153,8 +153,8 @@ if __name__ == "__main__":
     sourceVerts = sourceMesh.verts[::sourceStep,:-1]
     targetVerts = targetMesh.verts[::targetStep,:-1]
 
-    MAT = icp(sourceVerts, targetVerts, max_iterations=maxIt, tolerance=tol)
+    MAT, dist = icp(sourceVerts, targetVerts, max_iterations=maxIt, tolerance=tol)
+
+    print(len(dist))
 
     writeMatrixToFile(MAT, "matICP.txt")
-    #sourceMesh.verts = np.array([ np.insert(  np.dot( MAT, np.append(v[:3],[1]) )[:3], 3, 0  ) for v in sourceMesh.verts ])
-    #sourceMesh.write("out.mesh")

@@ -5,33 +5,6 @@ import os
 import msh
 import sys
 
-
-def addCube(xmin,xmax,ymin,ymax,zmin,zmax,ref=100):
-    cubeVerts = np.array([
-        [xmin, ymin, zmin],
-        [xmin, ymin, zmax],
-        [xmax, ymin, zmin],
-        [xmax, ymin, zmax],
-        [xmin, ymax, zmin],
-        [xmin, ymax, zmax],
-        [xmax, ymax, zmin],
-        [xmax, ymax, zmax]
-    ])
-    cubeTris = np.array([
-        [0,1,2],
-        [1,3,2],
-        [4,6,5],
-        [5,6,7],
-        [1,5,3],
-        [3,5,7],
-        [2,6,4],
-        [0,2,4],
-        [3,7,6],
-        [2,3,6],
-        [0,4,1],
-        [1,4,5]
-    ])
-    return np.insert(cubeVerts,3,ref,axis=1), np.insert(cubeTris,3,ref,axis=1)
 def command(cmd, displayOutput=False):
     err = 1
     print "Running the command '" + cmd + "'"
@@ -54,20 +27,24 @@ if __name__=="__main__":
     mesh = msh.Mesh(sys.argv[1])
     mesh.tris[:,3]=3
 
+    #Et si on scalait des le depart?
+    mesh.verts[:,:3] -= mesh.center
+    mesh.verts[:,:3]*=0.8/np.max(mesh.dims)
+    mesh.verts[:,:3]+=[0.5,0.5,0.5]
+    mesh.computeBBox()
 
 
     print "Computing the signed distance"
-    cube = msh.Mesh()
+    """
     cubeDist = np.max(mesh.dims)/5
-    cube.verts, cube.tris = addCube(
-        mesh.xmin-cubeDist,
+    cube = msh.Mesh(cube=[mesh.xmin-cubeDist,
         mesh.xmax+cubeDist,
         mesh.ymin-cubeDist,
         mesh.ymax+cubeDist,
         mesh.zmin-cubeDist,
-        mesh.zmax+cubeDist,
-        ref=0
-    )
+        mesh.zmax+cubeDist])
+    """
+    cube=msh.Mesh(cube=[0,1,0,1,0,1])
     cube.write("box.mesh")
     #Creating the signed distance object
     command( "tetgen -pgANEF box.mesh")
@@ -78,14 +55,14 @@ if __name__=="__main__":
 
     print "Extracting isovalues"
     #Extracting the isovalues meshes
-    command("mmg3d_O3 box.1.o.mesh -nr -ls " + str(5) + " -hausd " + str(2) + " -out iso1.mesh")
+    command("mmg3d_O3 box.1.o.mesh -nr -ls " + str(np.max(mesh.dims)/10) + " -hausd " + str(np.max(mesh.dims)/25) + " -out iso1.mesh")
     iso1 = msh.Mesh("iso1.mesh")
     iso1.tets = np.array([])
     iso1.removeRef(0)
     iso1.discardUnused()
     iso1.write("iso1.mesh")
     #Extracting the isovalues meshes
-    command("mmg3d_O3 box.1.o.mesh -nr -ls " + str(1) + " -hausd " + str(2) + " -out iso2.mesh")
+    command("mmg3d_O3 box.1.o.mesh -nr -ls " + str(np.max(mesh.dims)/25) + " -hausd " + str(np.max(mesh.dims)/25) + " -out iso2.mesh")
     iso2 = msh.Mesh("iso2.mesh")
     iso2.tets = np.array([])
     iso2.removeRef(0)
@@ -103,8 +80,17 @@ if __name__=="__main__":
     #Creating tetrahedra
     command("tetgen -pgaYANEFq1.02 iso3.mesh")
     final = msh.Mesh("iso3.1.mesh")
+
+    #Pour un triangle de l'exterieur (ref 1), si un tetra partage un point,
+    #alors on garde sa reference
+    ext_point_ind = final.tris[final.tris[:,-1]==1][0][0]
+    ext_ref=None
+    for t in final.tets:
+        if ext_point_ind in t:
+            ext_ref = t[-1]
+
     final.tris = final.tris[final.tris[:,-1]>0]
-    final.tets = final.tets[final.tets[:,-1]!=2]
+    final.tets = final.tets[final.tets[:,-1]==ext_ref]
     final.discardUnused()
     final.write("final.mesh")
     #Last volume remesh
@@ -113,22 +99,19 @@ if __name__=="__main__":
 
 
     print "Scaling and translating to a unit box"
+    """
     #Scaling to a box between 0 and 1
     shell   = msh.Mesh("final.o.mesh")
-    cube    = msh.Mesh(cube=[0.1,0.9,0.1,0.9,0.1,0.9])
-    scale  = np.min(cube.dims/shell.dims)
-    center = shell.center
-    #Applying the scale factors
-    print "Scale: " + str(scale)
-    shell.scale(scale, center)
-    mesh.scale(scale, center)
-    #Translating meshes
-    print "Translation: " + str(" ".join([ str(x) for x in 0.5-shell.center]) )
-    shell.verts[:,:3]+=(np.array([0.5,0.5,0.5])-shell.center)
-    mesh.verts[:,:3]+=(np.array([0.5,0.5,0.5])-shell.center)
-    shell.computeBBox()
-    mesh.computeBBox()
-    mesh.tris[:,-1] = 0
-    #Writing files
-    shell.write("shell.mesh")
-    mesh.write("surface.mesh")
+    scale  = 0.8/np.max(shell.dims)
+    #Translate to origin
+    M1 = np.eye(4)
+    M1[:3,3] = -shell.center
+    #Scale
+    M2 = np.eye(4)*scale
+    M2[3,3]=1
+    #Translate to 0.5
+    M3 = np.eye(4)
+    M3[:3,3] = np.array([0.5,0.5,0.5])
+    MAT = np.dot(np.dot(M3, M2),M1)
+    np.savetxt("matToUnit.txt",MAT)
+    """
