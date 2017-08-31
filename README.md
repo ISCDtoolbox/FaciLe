@@ -14,8 +14,8 @@ The project is structured as follows:
 For more information on the various steps of facial reconstruction, please refer to the [Usage](docs/USAGE.md) page.
 
 ## Licensing
-The content of this repo are licensed under the [GNU-GPL v3](docs/LICENSE.md).
-Exterior tools are licensed as follows:
+The content of this repo is licensed under the [GNU-GPL v3](docs/LICENSE.md).
+External tools are licensed as follows:
 * [Commons library](https://github.com/ISCDtoolbox/Commons): [GNU-GPL v3](https://www.gnu.org/licenses/gpl-3.0.fr.html)
 * [LinearElasticity Library](https://github.com/ISCDtoolbox/LinearElasticity): [GNU-GPL v3](https://www.gnu.org/licenses/gpl-3.0.fr.html)
 * [MshDist](https://github.com/ISCDtoolbox/Mshdist): [GNU-GPL v3](https://www.gnu.org/licenses/gpl-3.0.fr.html)

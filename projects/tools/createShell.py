@@ -25,14 +25,6 @@ if __name__=="__main__":
 
     print "Opening " + sys.argv[1]
     mesh = msh.Mesh(sys.argv[1])
-    mesh.tris[:,3]=3
-
-    #Et si on scalait des le depart?
-    mesh.verts[:,:3] -= mesh.center
-    mesh.verts[:,:3]*=0.8/np.max(mesh.dims)
-    mesh.verts[:,:3]+=[0.5,0.5,0.5]
-    mesh.computeBBox()
-
 
     print "Computing the signed distance"
     """
