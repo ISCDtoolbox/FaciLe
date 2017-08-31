@@ -132,6 +132,12 @@ def align_data(d, ref, offset=None, write=False):
                 for z in aD[i]:
                     f.write(str(z[0]) + " " + str(z[1]) + " " + str(z[2]) + "\n")
     return aD
+def writeMatrixToFile(mat, file):
+    with open(file, "w") as f:
+        for l in mat:
+            for x in l:
+                f.write(str(x) + " ")
+            f.write("\n")
 
 if __name__ == "__main__":
     maxIt = 200
@@ -149,5 +155,6 @@ if __name__ == "__main__":
 
     MAT = icp(sourceVerts, targetVerts, max_iterations=maxIt, tolerance=tol)
 
-    sourceMesh.verts = np.array([ np.insert(  np.dot( MAT, np.append(v[:3],[1]) )[:3], 3, 0  ) for v in sourceMesh.verts ])
-    sourceMesh.write("out.mesh")
+    writeMatrixToFile(MAT, "matICP.txt")
+    #sourceMesh.verts = np.array([ np.insert(  np.dot( MAT, np.append(v[:3],[1]) )[:3], 3, 0  ) for v in sourceMesh.verts ])
+    #sourceMesh.write("out.mesh")

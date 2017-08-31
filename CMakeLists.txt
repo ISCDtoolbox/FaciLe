@@ -19,19 +19,20 @@ add_subdirectory(projects/alignement ${CMAKE_CURRENT_BINARY_DIR}/alignement)
 
 #Set the paths to the different executables
 #Exterior tools
-set(MSHDIST_EXE   ${CMAKE_CURRENT_BINARY_DIR}/mshdist/mshdist)
-set(TETGEN_EXE    ${CMAKE_CURRENT_BINARY_DIR}/tetgen/tetgen)
-set(MMGS_EXE      ${CMAKE_CURRENT_BINARY_DIR}/mmgTools/bin/mmgs_O3)
-set(MMG3D_EXE     ${CMAKE_CURRENT_BINARY_DIR}/mmgTools/bin/mmg3d_O3)
-set(SUPER4PCS_EXE ${CMAKE_CURRENT_BINARY_DIR}/super4PCS/demos/Super4PCS/Super4PCS )
+set(MSHDIST_EXE     ${CMAKE_CURRENT_BINARY_DIR}/mshdist/mshdist)
+set(TETGEN_EXE      ${CMAKE_CURRENT_BINARY_DIR}/tetgen/tetgen)
+set(MMGS_EXE        ${CMAKE_CURRENT_BINARY_DIR}/mmgTools/bin/mmgs_O3)
+set(MMG3D_EXE       ${CMAKE_CURRENT_BINARY_DIR}/mmgTools/bin/mmg3d_O3)
+set(SUPER4PCS_EXE   ${CMAKE_CURRENT_BINARY_DIR}/super4PCS/demos/Super4PCS/Super4PCS )
 #Compiled applications
-set(MORPHING_EXE  ${CMAKE_CURRENT_BINARY_DIR}/morphing/morphing)
-set(WARPING_EXE   ${CMAKE_CURRENT_BINARY_DIR}/warping/warping)
-set(ALIGN_EXE     ${CMAKE_CURRENT_BINARY_DIR}/alignement/align)
+set(MORPHING_EXE    ${CMAKE_CURRENT_BINARY_DIR}/morphing/morphing)
+set(WARPING_EXE     ${CMAKE_CURRENT_BINARY_DIR}/warping/warping)
+set(ALIGN_EXE       ${CMAKE_CURRENT_BINARY_DIR}/alignement/align)
 #Python scripts
-set(BOUNDING_EXE  ${CMAKE_SOURCE_DIR}/projects/tools/fastBoundingMesh.py)
-set(SHELL_EXE     ${CMAKE_SOURCE_DIR}/projects/tools/createShell.py)
-set(PYTHONICP_EXE ${CMAKE_SOURCE_DIR}/projects/alignement/icp.py)
+set(BOUNDING_EXE    ${CMAKE_SOURCE_DIR}/projects/tools/fastBoundingMesh.py)
+set(SHELL_EXE       ${CMAKE_SOURCE_DIR}/projects/tools/createShell.py)
+set(PYTHONICP_EXE   ${CMAKE_SOURCE_DIR}/projects/alignement/icp.py)
+set(APPLYMATRIX_EXE ${CMAKE_SOURCE_DIR}/projects/tools/applyTransformationMatrix.py)
 
 #Creating the python file for paths
 configure_file(executable_paths.py.in ${CMAKE_SOURCE_DIR}/projects/executable_paths.py)

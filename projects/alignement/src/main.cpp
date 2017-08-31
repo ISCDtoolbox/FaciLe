@@ -1,6 +1,8 @@
 #include "mesh.h"
 #include "align.h"
 
+#include <fstream>
+
 char* source = "source.mesh";
 char* target = "target.mesh";
 
@@ -10,8 +12,8 @@ float delta = 5.0;
 int n_points = 1000;
 
 //Parameters for ICP
-float inlierDist = 1.0;
-int maxIt = 100;
+float inlierDist = -1.0;
+int maxIt = 200;
 
 #include <cstring>
 
@@ -22,6 +24,18 @@ float* transformVert(const float* mat, float* vert){
   V[1] = mat[4]*vert[0] + mat[5]*vert[1] + mat[6]*vert[2] + mat[7];
   V[2] = mat[8]*vert[0] + mat[9]*vert[1] + mat[10]*vert[2] + mat[11];
   return V;
+}
+
+void writeMatrixToFile(const float *MAT, char* outputFile){
+  std::ofstream matrixFile;
+  matrixFile.open(outputFile);
+  for(int i = 0 ; i < 4 ; i++){
+    for(int j = 0 ; j < 4 ; j++){
+      matrixFile << MAT[4*i + j] << " ";
+    }
+    matrixFile << "\n";
+  }
+  matrixFile.close();
 }
 
 void getArgs(int argc, char **argv) {
@@ -77,8 +91,9 @@ int main(int argc, char ** argv ) {
 
   //Compute the super4PCS registration
   const float *mat = super4PCS(*targetMesh, *sourceMesh, overlap, delta, n_points);
-
+  writeMatrixToFile(mat, "matSuper4PCS.txt");
   //Transform the target object
+  /*
   for (int i = 0 ; i < sourceMesh->vertices.size()/3 ; i++){
     float* newVert = transformVert(mat, &(sourceMesh->vertices[3*i]));
     sourceMesh->vertices[3*i+0] = newVert[0];
@@ -88,9 +103,13 @@ int main(int argc, char ** argv ) {
   sourceMesh->write("output.mesh");
 
   std::cout << "vert = " << sourceMesh->vertices[0] << " " << sourceMesh->vertices[1] << " " << sourceMesh->vertices[2] << std::endl;
+  */
 
 
   const float *matICP = icp(*targetMesh, *sourceMesh, maxIt, inlierDist);
+  writeMatrixToFile(mat, "matICP.txt");
+
+  /*
   //Transform the target object
   for (int i = 0 ; i < sourceMesh->vertices.size()/3 ; i++){
     float* newVert = transformVert(matICP, &(sourceMesh->vertices[3*i]));
@@ -98,8 +117,8 @@ int main(int argc, char ** argv ) {
     sourceMesh->vertices[3*i+1] = newVert[1];
     sourceMesh->vertices[3*i+2] = newVert[2];
   }
-
   sourceMesh->write("output2.mesh");
+  */
 
   return 0;
 }
