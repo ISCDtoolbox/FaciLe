@@ -1,3 +1,5 @@
+![face_skull](https://user-images.githubusercontent.com/11873158/29940265-f9aae006-8e8e-11e7-9a91-865e98dee937.png)
+
 # FaciLe
 Facial Reconstruction for forensic sciences.
 
