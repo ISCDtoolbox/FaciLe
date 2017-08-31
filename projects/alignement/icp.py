@@ -8,7 +8,8 @@ from scipy.spatial.distance import cdist
 import os
 
 import sys
-sys.path.append("../tools")
+
+sys.path.append(os.path.join(os.path.dirname(__file__),"../tools"))
 import msh
 
 def best_fit_transform(A, B):

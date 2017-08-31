@@ -1,6 +1,7 @@
 # project
 cmake_minimum_required (VERSION 2.6)
 project (libicp)
+set(CMAKE_MACOSX_RPATH 1)
 
 # directories
 set (LIBICP_SRC_DIR src)
