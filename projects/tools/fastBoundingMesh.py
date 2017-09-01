@@ -4,6 +4,7 @@ import numpy as np
 import os
 import msh
 import sys
+import argparse
 
 def binaryToXYZ(data, xyzFile):
     X,Y,Z = data.nonzero()
@@ -177,18 +178,37 @@ def spaceCarve(data):
 
     return newData
 
-resolution = 71
+def parse():
+    parser = argparse.ArgumentParser(description="Creates an adequate shell for warping")
+    parser.add_argument("-i", "--input", help="input .mesh file", type=str, required=True)
+    parser.add_argument("-o", "--output", help="transformed .mesh file", type=str, required=True)
+    parser.add_argument("-r", "--resolution", help="resolution of the carving algorithm, has to be odd", type=int, default=51)
+    parser.add_argument("-m", "--remesh", help="Apply a final surface remeshing to the carved mesh", action="store_true")
+    return parser.parse_args()
+
+def checkArgs(args):
+    if not os.path.isfile(args.input):
+        print args.input + " is not a valid file"
+        sys.exit()
+    if not os.path.splitext(args.input)[1] == ".mesh":
+        print args.input + " is not a .mesh file"
+        sys.exit()
+    if not os.path.splitext(args.output)[1] == ".mesh":
+        print "Output file must be in the .mesh format"
+        sys.exit()
+    if args.resolution < 11 or args.resolution>301:
+        print "The resolution must be in [11, 301]"
+        sys.exit()
 
 if __name__=="__main__":
-    #Parsing arguments
-    root = sys.argv[1].split("/")[-1][:-5]
-
+    args = parse()
+    checkArgs(args)
 
     print "1 - Converting .mesh to binary .xyz"
     print "-  1.1 - Opening the mesh file"
-    mesh = msh.Mesh(sys.argv[1])
+    mesh = msh.Mesh(args.input)
     print "-  1.2 - Converting to binary point data"
-    binaryData, totalScale = ptsToXYZCubes(mesh.verts,resolution)
+    binaryData, totalScale = ptsToXYZCubes(mesh.verts,args.resolution)
 
 
     print "2 - Creating the filled volume"
@@ -203,7 +223,8 @@ if __name__=="__main__":
     recon.computeBBox()
     print "-  2.3 - Writing the scaled reconstructed .mesh file"
     recon.fitTo(mesh,keepRatio=False)
-    recon.write(root + ".hull.mesh")
+    recon.write(args.output)
     del binaryData, newData, recon
-    print "2.4 - Remeshing the hull"
-    os.system("mmgs_O3 " + root + ".hull.mesh -nr -hausd " + str(np.max(mesh.dims)/100))
+    if args.remesh:
+        print "2.4 - Remeshing the hull"
+        os.system("mmgs_O3 " + args.output + " -nr -hausd " + str(np.max(mesh.dims)/100) + " -o " + args.output)
