@@ -29,10 +29,11 @@ set(MORPHING_EXE    ${CMAKE_CURRENT_BINARY_DIR}/morphing/morphing)
 set(WARPING_EXE     ${CMAKE_CURRENT_BINARY_DIR}/warping/warping)
 set(ALIGN_EXE       ${CMAKE_CURRENT_BINARY_DIR}/alignement/align)
 #Python scripts
-set(BOUNDING_EXE    ${CMAKE_SOURCE_DIR}/projects/tools/fastBoundingMesh.py)
-set(SHELL_EXE       ${CMAKE_SOURCE_DIR}/projects/tools/createShell.py)
-set(PYTHONICP_EXE   ${CMAKE_SOURCE_DIR}/projects/alignement/icp.py)
-set(APPLYMATRIX_EXE ${CMAKE_SOURCE_DIR}/projects/tools/applyTransformationMatrix.py)
+set(BOUNDING_EXE    "python ${CMAKE_SOURCE_DIR}/projects/tools/fastBoundingMesh.py")
+set(SHELL_EXE       "python ${CMAKE_SOURCE_DIR}/projects/tools/createShell.py")
+set(PYTHONICP_EXE   "python ${CMAKE_SOURCE_DIR}/projects/alignement/icp.py")
+set(APPLYMATRIX_EXE "python ${CMAKE_SOURCE_DIR}/projects/tools/applyTransformationMatrix.py")
+set(PCA_EXE         "python ${CMAKE_SOURCE_DIR}/projects/ACP/PCA.py")
 
 #Creating the python file for paths
-configure_file(executable_paths.py.in ${CMAKE_SOURCE_DIR}/projects/executable_paths.py)
+configure_file(executable_paths.py.in ${CMAKE_SOURCE_DIR}/pipeline/executable_paths.py)

@@ -18,8 +18,11 @@ class Mesh:
                 return 1
             if kwd in line:
                 if kwd not in self.done and line[0]!="#":
-                    self.begin[k] = index+3 if kwd=="SolAtVertices" else index+2
-                    self.found[k] = True
+                    if kwd == "Vertices" and line.strip()=="SolAtVertices":
+                        pass
+                    else:
+                        self.begin[k] = index+3 if kwd=="SolAtVertices" else index+2
+                        self.found[k] = True
     def get_infos(self, path):
         for j in range(len(self.keywords)):
             with open(path) as f:
@@ -65,53 +68,60 @@ class Mesh:
                 sys.exit()
             sys.exit()
     def readSol(self,path=None):
-        try:
-            if self.path and not path:
+        fileName = path if path is not None else self.path[:-5]+".sol"
+        if True:
+            if fileName is not None:
                 self.offset=0
-                self.get_infos(self.path[:-5]+".sol")
-                with open(self.path[:-5]+".sol") as f:
-                        if self.numItems[4]:
-                            #Allows for searching through n empty lines
-                            maxNumberOfEmptylines = 20
-                            for i in range(maxNumberOfEmptylines):
-                                f.seek(0)
-                                firstValidLine = f.readlines()[self.begin[4]].strip()
-                                if firstValidLine == "":
-                                    self.begin[4]+=1
-                                else:
-                                    break
+                self.get_infos(fileName)
+                with open(fileName) as f:
+                    if self.numItems[4]:
+                        #Allows for searching through n empty lines
+                        maxNumberOfEmptylines = 20
+                        for i in range(maxNumberOfEmptylines):
                             f.seek(0)
-                            nItems = len(f.readlines()[self.begin[4]].strip().split())
-                            f.seek(0)
-                            #Read a scalar
-                            if nItems == 1:
-                                self.scalars = np.array([float(l) for l in itertools.islice(f, self.begin[4], self.begin[4] + self.numItems[4])])
-                                self.solMin = np.min(self.scalars)
-                                self.solMax = np.max(self.scalars)
-                                self.vectors = np.array([])
-                            #Read a vector
-                            if nItems == 3:
-                                self.vectors = np.array([ [float(x) for x in l.strip().split()[:3]] for l in itertools.islice(f, self.begin[4], self.begin[4] + self.numItems[4])])
-                                self.vecMin = np.min(np.linalg.norm(self.vectors,axis=1))
-                                self.vecMax = np.min(np.linalg.norm(self.vectors,axis=1))
-                                self.scalars=np.array([])
-                            #Read a scalar after a vector
-                            if nItems == 4:
-                                self.vectors = np.array([ [float(x) for x in l.strip().split()[:3]] for l in itertools.islice(f, self.begin[4], self.begin[4] + self.numItems[4])])
-                                self.vecMin = np.min(np.linalg.norm(self.vectors,axis=1))
-                                self.vecMax = np.min(np.linalg.norm(self.vectors,axis=1))
-                                f.seek(0)
-                                self.scalars = np.array([float(l.split()[3]) for l in itertools.islice(f, self.begin[4], self.begin[4] + self.numItems[4])])
-                                self.solMin = np.min(self.scalars)
-                                self.solMax = np.max(self.scalars)
-                        else:
-                            self.scalars = np.array([])
+                            firstValidLine = f.readlines()[self.begin[4]].strip()
+                            if firstValidLine == "":
+                                self.begin[4]+=1
+                            else:
+                                break
+                        f.seek(0)
+                        nItems = len(f.readlines()[self.begin[4]].strip().split())
+                        f.seek(0)
+                        #Read a scalar
+                        if nItems == 1:
+                            self.scalars = np.array([float(l) for l in itertools.islice(f, self.begin[4], self.begin[4] + self.numItems[4])])
+                            self.solMin = np.min(self.scalars)
+                            self.solMax = np.max(self.scalars)
                             self.vectors = np.array([])
-        except:
+                        #Read a vector
+                        if nItems == 3:
+                            self.vectors = np.array([ [float(x) for x in l.strip().split()[:3]] for l in itertools.islice(f, self.begin[4], self.begin[4] + self.numItems[4])])
+                            self.vecMin = np.min(np.linalg.norm(self.vectors,axis=1))
+                            self.vecMax = np.min(np.linalg.norm(self.vectors,axis=1))
+                            self.scalars=np.array([])
+                        #Read a scalar after a vector
+                        if nItems == 4:
+                            self.vectors = np.array([ [float(x) for x in l.strip().split()[:3]] for l in itertools.islice(f, self.begin[4], self.begin[4] + self.numItems[4])])
+                            self.vecMin = np.min(np.linalg.norm(self.vectors,axis=1))
+                            self.vecMax = np.min(np.linalg.norm(self.vectors,axis=1))
+                            f.seek(0)
+                            self.scalars = np.array([float(l.split()[3]) for l in itertools.islice(f, self.begin[4], self.begin[4] + self.numItems[4])])
+                            self.solMin = np.min(self.scalars)
+                            self.solMax = np.max(self.scalars)
+                    else:
+                        self.scalars = np.array([])
+                        self.vectors = np.array([])
+        else:
             print("No .sol file associated with the .mesh file")
 
     # Constructor
     def __init__(self, path=None, cube=None, ico=None):
+        self.done     = []
+        self.found    = [False for k in self.keywords]
+        self.begin    = [0 for k in self.keywords]
+        self.numItems = [0 for k in self.keywords]
+        self.offset   = 0
+
         if cube:
             self.verts = np.array([
                 [cube[0], cube[2], cube[4]],
@@ -180,12 +190,6 @@ class Mesh:
             self.verts[:,:3]*=0.5*ico[1]
             self.verts[:,:3]+=ico[0]
         elif path:
-            self.done     = []
-            self.found    = [False for k in self.keywords]
-            self.begin    = [0 for k in self.keywords]
-            self.numItems = [0 for k in self.keywords]
-            self.offset   = 0
-
             self.path = path
             self.get_infos(path)
             with open(path) as f:
@@ -216,7 +220,10 @@ class Mesh:
         self.vectors=np.array([])
 
     def caracterize(self):
-        print("File " + self.path)
+        try:
+            print("File " + self.path)
+        except:
+            pass
         if len(self.verts):
             print("\tVertices:        ", len(self.verts))
             print("\tBounding box:    ", "[%.2f, %.2f] [%.2f, %.2f] [%.2f, %.2f]" % (self.xmin, self.xmax,self.ymin, self.ymax, self.zmin, self.zmax))
@@ -408,7 +415,12 @@ class Mesh:
         with open(path,"a") as f:
             f.write("\nEnd")
     def writeSol(self,path):
-        self.writeArray(path,"MeshVersionFormatted 2\nDimension 3\n\nSolAtVertices\n"+str(len(self.scalars))+"\n1 1", self.scalars, '%.8f', firstOpening=True)
+        if len(self.scalars) and not len(self.vectors):
+            self.writeArray(path,"MeshVersionFormatted 2\nDimension 3\n\nSolAtVertices\n"+str(len(self.scalars))+"\n1 1", self.scalars, '%.8f', firstOpening=True)
+        elif len(self.vectors) and not len(self.scalars):
+            self.writeArray(path,"MeshVersionFormatted 2\nDimension 3\n\nSolAtVertices\n"+str(len(self.vectors))+"\n1 2", self.vectors, '%.8f %.8f %.8f', firstOpening=True)
+        elif len(self.vectors) and len(self.scalars):
+            self.writeArray(path,"MeshVersionFormatted 2\nDimension 3\n\nSolAtVertices\n"+str(len(self.vectors))+"\n2 2 1", np.c_[ self.vectors, self.scalars ], '%.8f %.8f %.8f %.8f', firstOpening=True)
 
     # other export functions
     def writeOBJ(self, path):
