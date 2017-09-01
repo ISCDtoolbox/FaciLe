@@ -47,14 +47,14 @@ if __name__=="__main__":
 
     print "Extracting isovalues"
     #Extracting the isovalues meshes
-    command("mmg3d_O3 box.1.o.mesh -nr -ls " + str(np.max(mesh.dims)/10) + " -hausd " + str(np.max(mesh.dims)/25) + " -out iso1.mesh")
+    command("mmg3d_O3 box.1.o.mesh -nr -ls " + str(np.max(mesh.dims)/10) + " -hausd " + str(np.max(mesh.dims)/50) + " -out iso1.mesh")
     iso1 = msh.Mesh("iso1.mesh")
     iso1.tets = np.array([])
     iso1.removeRef(0)
     iso1.discardUnused()
     iso1.write("iso1.mesh")
     #Extracting the isovalues meshes
-    command("mmg3d_O3 box.1.o.mesh -nr -ls " + str(np.max(mesh.dims)/25) + " -hausd " + str(np.max(mesh.dims)/25) + " -out iso2.mesh")
+    command("mmg3d_O3 box.1.o.mesh -nr -ls " + str(np.max(mesh.dims)/20) + " -hausd " + str(np.max(mesh.dims)/50) + " -out iso2.mesh")
     iso2 = msh.Mesh("iso2.mesh")
     iso2.tets = np.array([])
     iso2.removeRef(0)

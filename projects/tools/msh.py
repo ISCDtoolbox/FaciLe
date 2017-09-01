@@ -310,6 +310,16 @@ class Mesh:
         self.verts[:,:3]*=scale
         self.verts[:,:3]+=otherMesh.center
         self.computeBBox()
+    def toUnitMatrix(self):
+        scale  = 0.8/np.max(self.dims)
+        M1 = np.eye(4)
+        M1[:3,3] = -self.center
+        M2 = np.eye(4)*scale
+        M2[3,3]=1
+        M3 = np.eye(4)
+        M3[:3,3] = np.array([0.5,0.5,0.5])
+        MAT = np.dot(np.dot(M3, M2),M1)
+        return MAT
     def discardUnused(self):
         used = np.zeros(shape=(len(self.verts)),dtype="bool_")
         if len(self.tris)>0:
@@ -386,7 +396,7 @@ class Mesh:
         self.verts[:,3] = 1
         self.verts = np.dot(self.verts,mat.T)
         self.verts[:,3]=refs
-
+        self.computeBBox()
 
     # .mesh export functions
     def writeArray(self, path, head, array, form, firstOpening=False, incrementIndex=False):
