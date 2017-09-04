@@ -68,6 +68,9 @@ int minimization(pInstance instance){
     k++;
   }
   
+   if(k==info.nit+1) fprintf(stdout," \n Max number of iterations reached it = %d .. \n",info.nit);
+   else if (tol > info.tol) fprintf(stdout," \n Desired tolerance reached tol = %e .. \n",info.tol);
+  
   fprintf(stdout," \n Writing data files .. \n");
   if ( !saveMesh(&instance->mesh_omega0, &instance->mesh_distance,1) )  return 0;
   if ( !computedistance(instance) )  return 0;
