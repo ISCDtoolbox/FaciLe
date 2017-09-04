@@ -53,10 +53,10 @@
 
 #define MESH_DREF 2
 #define MESH_ELREF 2
-#define MESH_BREF 4
+#define MESH_BREF 99
 
 #define DEFAULT_NIT 400; // default iterations number
-#define DEFAULT_TOL 1e-2; // default error allowed 
+#define DEFAULT_TOL 1e-3; // default error allowed 
 
 
 enum {None=0, Dirichlet, Load};
