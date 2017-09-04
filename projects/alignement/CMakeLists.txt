@@ -3,6 +3,7 @@ project(alignement)
 
 #Super4PCS
 option(SUPER4PCS_COMPILE_TESTS "" FALSE)
+option(SUPER4PCS_BUILD_TEST "" FALSE)
 option(SUPER4PCS_COMPILE_DEMOS "" FALSE)
 option(BUILD_SHARED_LIBS "" TRUE)
 option(IO_USE_OPENCV "Use OpenCV for texture loading" FALSE)

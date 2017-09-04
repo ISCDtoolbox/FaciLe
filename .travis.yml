@@ -24,6 +24,7 @@ matrix:
           packages:
             - g++-4.8
             - cmake
+            - libboost-dev
       script:
         - mkdir build
         - cd build
