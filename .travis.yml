@@ -1,0 +1,27 @@
+language: c
+
+sudo: false
+
+matrix:
+  include:
+    
+    - os: linux
+      compiler: gcc-4.8
+      addons:
+        apt:
+          packages:
+            - g++-4.8
+            - cmake
+      script:
+        - mkdir build
+        - cd build
+        - cmake ..
+        - make
+
+    - os: osx
+      compiler: clang
+      script:
+        - mkdir build
+        - cd build
+        - cmake ..
+        - make
