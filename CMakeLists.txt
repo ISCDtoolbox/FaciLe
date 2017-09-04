@@ -6,7 +6,7 @@ add_subdirectory(projects/alignement ${CMAKE_CURRENT_BINARY_DIR}/alignement)
 
 #Commons library
 #add_subdirectory(${PROJECT_SOURCE_DIR}/ext/ISCD_Commons ${CMAKE_CURRENT_BINARY_DIR}/commons)
-
+add_subdirectory(projects/morphing ${CMAKE_CURRENT_BINARY_DIR}/morphing)
 
 #project(warping)
 #add_subdirectory(ext/ISCD_LinearElasticity ${CMAKE_CURRENT_BINARY_DIR}/linearElasticity)
