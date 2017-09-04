@@ -12,7 +12,7 @@ For more information on the various steps of facial reconstruction, please refer
 The project is structured as follows:
 * [/docs](docs/): Documentation
 * [/ext](ext/): Links to exterior dependencies, which will be downloaded when cloning the repository and installed during the compilation step.
-* [/projects](projects/):Contains the various codes developed at ISCD for the FaciLe project.
+* [/projects](projects/): Contains the various codes developed at ISCD for the FaciLe project.
 * [/pipeline](pipeline/): Contains "high-level" wrapper scripts, chaining the different tools to offer a complete facial reconstruction toolkit.
 
 
