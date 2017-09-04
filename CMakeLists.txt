@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
-
+include(ExternalProject)
 
 #Alignement project
 add_subdirectory(projects/alignement ${CMAKE_CURRENT_BINARY_DIR}/alignement)
@@ -17,12 +17,42 @@ add_subdirectory(projects/morphing ${CMAKE_CURRENT_BINARY_DIR}/morphing)
 #add_subdirectory(ext/tetgen ${CMAKE_CURRENT_BINARY_DIR}/tetgen)
 #add_subdirectory(projects/morphing ${CMAKE_CURRENT_BINARY_DIR}/morphing)
 
+find_program(TETGEN tetgen)
+if(TETGEN)
+  message("-- Found tetgen: ${TETGEN}")
+  set(TETGEN_EXE ${TETGEN})
+else()
+  message("-- Will install tetgen")
+  ExternalProject_Add(tetgen GIT_REPOSITORY https://github.com/ufz/tetgen.git INSTALL_COMMAND "" PREFIX ext/tetgen)
+  set(TETGEN_EXE ${CMAKE_CURRENT_BINARY_DIR}/ext/tetgen/src/tetgen-build/tetgen)
+endif()
+
+find_program(MMGS mmgs_O3)
+find_program(MMG3D mmgs_O3)
+if(MMGS AND MMG3D)
+  message("-- Found mmgs: ${MMGS}")
+  message("-- Found mmg3d: ${MMG3D}")
+  set(MMGS_EXE ${MMGS})
+  set(MMG3D_EXE ${MMG3D})
+else()
+  message("-- Will install mmgTools")
+  ExternalProject_Add(mmgTools GIT_REPOSITORY https://github.com/MmgTools/mmg.git INSTALL_COMMAND "" PREFIX ext/mmgTools)
+  set(MMGS_EXE ${CMAKE_CURRENT_BINARY_DIR}/ext/mmgTools/src/mmgTools/bin/mmgs_O3)
+  set(MMG3D_EXE ${CMAKE_CURRENT_BINARY_DIR}/ext/mmgTools/src/mmgTools/bin/mmg3d_O3)
+endif()
+
+find_program(MSHDIST mshdist)
+if(MSHDIST)
+  message("-- Found mshdist: ${MSHDIST}")
+  set(MSHDIST_EXE ${MSHDIST})
+else()
+  message("-- Will install mshdist")
+  ExternalProject_Add(mshdist GIT_REPOSITORY https://github.com/ISCDtoolbox/Mshdist.git INSTALL_COMMAND "" PREFIX ext/mshdist)
+  set(MSHDIST_EXE ${CMAKE_CURRENT_BINARY_DIR}/ext/mshdist/src/mshdist-build/mshdist)
+endif()
+
 #Set the paths to the different executables
 #Exterior tools
-set(MSHDIST_EXE     ${CMAKE_CURRENT_BINARY_DIR}/mshdist/mshdist)
-set(TETGEN_EXE      ${CMAKE_CURRENT_BINARY_DIR}/tetgen/tetgen)
-set(MMGS_EXE        ${CMAKE_CURRENT_BINARY_DIR}/mmgTools/bin/mmgs_O3)
-set(MMG3D_EXE       ${CMAKE_CURRENT_BINARY_DIR}/mmgTools/bin/mmg3d_O3)
 set(SUPER4PCS_EXE   ${CMAKE_CURRENT_BINARY_DIR}/super4PCS/demos/Super4PCS/Super4PCS )
 #Compiled applications
 set(MORPHING_EXE    ${CMAKE_CURRENT_BINARY_DIR}/morphing/morphing)

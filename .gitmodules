@@ -4,15 +4,6 @@
 [submodule "ext/ISCD_LinearElasticity"]
 	path = ext/ISCD_LinearElasticity
 	url = https://github.com/ISCDtoolbox/LinearElasticity.git
-[submodule "ext/ISCD_MshDist"]
-	path = ext/ISCD_MshDist
-	url = https://github.com/ISCDtoolbox/Mshdist.git
-[submodule "ext/tetgen"]
-	path = ext/tetgen
-	url = https://github.com/ufz/tetgen.git
-[submodule "ext/mmgTools"]
-	path = ext/mmgTools
-	url = https://github.com/MmgTools/mmg.git
 [submodule "projects/alignement/ext/Super4PCS"]
 	path = projects/alignement/ext/Super4PCS
 	url = https://github.com/nmellado/Super4PCS.git
