@@ -7,13 +7,15 @@ Facial Reconstruction for forensic sciences.
 To install, please refer to the [Installation and compilation section](docs/INSTALL.md)
 
 ## Usage
+For more information on the various steps of facial reconstruction, please refer to the [Usage](docs/USAGE.md) page.
+
 The project is structured as follows:
 * [/docs](docs/): Documentation
 * [/ext](ext/): Links to exterior dependencies, which will be downloaded when cloning the repository and installed during the compilation step.
 * [/projects](projects/):Contains the various codes developed at ISCD for the FaciLe project.
 * [/pipeline](pipeline/): Contains "high-level" wrapper scripts, chaining the different tools to offer a complete facial reconstruction toolkit.
 
-For more information on the various steps of facial reconstruction, please refer to the [Usage](docs/USAGE.md) page.
+
 
 ## Licensing
 The content of this repo is licensed under the [GNU-GPL v3](docs/LICENSE.md).
