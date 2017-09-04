@@ -14,6 +14,16 @@ before_install:
     fi
 - cmake --version
 
+#For mshdist installation
+before_script:
+  - git clone https://github.com/ISCDtoolbox/Commons.git
+  - mkdir Commons/build
+  - cd Commons/build
+  - cmake ..
+  - make
+  - make install
+  - cd -
+
 matrix:
   include:
 
