@@ -6,7 +6,7 @@ https://github.com/ClayFlannigan/icp
 import numpy as np
 from scipy.spatial.distance import cdist
 import os
-
+import argparse
 import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__),"../tools"))
@@ -139,22 +139,43 @@ def writeMatrixToFile(mat, file):
                 f.write(str(x) + " ")
             f.write("\n")
 
+def parse():
+    parser = argparse.ArgumentParser(description="Launches an ICP")
+    parser.add_argument("-s", "--source", help="input .mesh source file (from)", type=str, required=True)
+    parser.add_argument("-t", "--target", help="input .mesh target file (to)", type=str, required=True)
+    parser.add_argument("-m", "--matrix", help="output file to write the matrix in", type=str, required=True)
+    parser.add_argument("-mIts", "--maxIterations", help="maximum number of iterations", type=int, default=200)
+    parser.add_argument("-mPts", "--maxPoints", help="maximum number of points", type=int, default=5000)
+    parser.add_argument("-tol", "--tolerance", help="residual", type=float, default=0.0001)
+    return parser.parse_args()
+
+def checkArgs(args):
+    if not os.path.isfile(args.source):
+        print args.source + " is not a valid file"
+        sys.exit()
+    if not os.path.splitext(args.source)[1] == ".mesh":
+        print args.source + " is not a .mesh file"
+        sys.exit()
+    if not os.path.isfile(args.target):
+        print args.target + " is not a valid file"
+        sys.exit()
+    if not os.path.splitext(args.target)[1] == ".mesh":
+        print args.target + " is not a .mesh file"
+        sys.exit()
+    if not os.path.splitext(args.matrix)[1] == ".txt":
+        print "Output file must be in the .txt format"
+        sys.exit()
+
 if __name__ == "__main__":
-    maxIt = 200
-    tol   = 0.0001
-    nPoints = 5000
+    sourceMesh = msh.Mesh(args.source)
+    targetMesh = msh.Mesh(args.target)
 
-    sourceMesh = msh.Mesh(sys.argv[1])
-    targetMesh = msh.Mesh(sys.argv[2])
-
-    sourceStep = len(sourceMesh.verts)/nPoints+1
-    targetStep = len(targetMesh.verts)/nPoints+1
+    sourceStep = len(sourceMesh.verts)/args.maxPoints+1
+    targetStep = len(targetMesh.verts)/args.maxPoints+1
 
     sourceVerts = sourceMesh.verts[::sourceStep,:-1]
     targetVerts = targetMesh.verts[::targetStep,:-1]
 
-    MAT, dist = icp(sourceVerts, targetVerts, max_iterations=maxIt, tolerance=tol)
+    MAT, dist = icp(sourceVerts, targetVerts, max_iterations=args.maxIterations, tolerance=args.tolerance)
 
-    print(len(dist))
-
-    writeMatrixToFile(MAT, "matICP.txt")
+    writeMatrixToFile(MAT, args.matrix)
