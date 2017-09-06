@@ -167,6 +167,10 @@ def checkArgs(args):
         sys.exit()
 
 if __name__ == "__main__":
+
+    args = parse()
+    checkArgs(args)
+
     sourceMesh = msh.Mesh(args.source)
     targetMesh = msh.Mesh(args.target)
 

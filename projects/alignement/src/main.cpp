@@ -91,34 +91,13 @@ int main(int argc, char ** argv ) {
 
   //Compute the super4PCS registration
   const float *mat = super4PCS(*targetMesh, *sourceMesh, overlap, delta, n_points);
-  writeMatrixToFile(mat, "matSuper4PCS.txt");
-  //Transform the target object
-  /*
-  for (int i = 0 ; i < sourceMesh->vertices.size()/3 ; i++){
-    float* newVert = transformVert(mat, &(sourceMesh->vertices[3*i]));
-    sourceMesh->vertices[3*i+0] = newVert[0];
-    sourceMesh->vertices[3*i+1] = newVert[1];
-    sourceMesh->vertices[3*i+2] = newVert[2];
-  }
-  sourceMesh->write("output.mesh");
-
-  std::cout << "vert = " << sourceMesh->vertices[0] << " " << sourceMesh->vertices[1] << " " << sourceMesh->vertices[2] << std::endl;
-  */
+  writeMatrixToFile(mat, "mat_Super4PCS.txt");
 
 
   const float *matICP = icp(*targetMesh, *sourceMesh, maxIt, inlierDist);
-  writeMatrixToFile(mat, "matICP.txt");
+  writeMatrixToFile(mat, "mat_ICP.txt");
+  std::cout << mat << std::endl;
 
-  /*
-  //Transform the target object
-  for (int i = 0 ; i < sourceMesh->vertices.size()/3 ; i++){
-    float* newVert = transformVert(matICP, &(sourceMesh->vertices[3*i]));
-    sourceMesh->vertices[3*i+0] = newVert[0];
-    sourceMesh->vertices[3*i+1] = newVert[1];
-    sourceMesh->vertices[3*i+2] = newVert[2];
-  }
-  sourceMesh->write("output2.mesh");
-  */
 
   return 0;
 }

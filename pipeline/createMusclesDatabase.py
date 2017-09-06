@@ -2,10 +2,31 @@ import os
 import sys
 import numpy as np
 from copy import deepcopy
+import argparse
 
 sys.path.append(os.path.join(os.path.dirname(__file__),"../projects/tools"))
 import msh
 import executable_paths as exe
+
+def parse():
+    parser = argparse.ArgumentParser(description="Creates mandible and masseter files for the database creation")
+    parser.add_argument("-i", "--input", help="input .mesh object", type=str, required=True)
+    parser.add_argument("-t", "--template", help="template mandible in full size", type=str, required=True)
+    return parser.parse_args()
+
+def checkArgs(args):
+    if not os.path.isfile(args.input):
+        print args.input + " is not a valid file"
+        sys.exit()
+    if not os.path.splitext(args.input)[1] == ".mesh":
+        print args.input + " is not a .mesh file"
+        sys.exit()
+    if not os.path.isfile(args.template):
+        print args.template + " is not a valid file"
+        sys.exit()
+    if not os.path.splitext(args.template)[1] == ".mesh":
+        print args.template + " is not a .mesh file"
+        sys.exit()
 
 def command(cmd, displayOutput=False):
     err = 1
@@ -23,22 +44,24 @@ def command(cmd, displayOutput=False):
         os.system("rm tmp_out.txt tmp_err.txt >/dev/null 2>&1")
 
 if __name__=="__main__":
+
+    args = parse()
+    checkArgs(args)
+
+    # 3 - Align to the template full mandibule
+    command(exe.align + " -i " + args.input + " " + args.template + " -d 50 -o 0.95", displayOutput=True)
+    command(exe.pythonICP + " -s " + args.input + " -t " + args.template + " -m mat_PythonICP.txt")
+
     # 1 - Reading the input file
-    fullMandible = msh.Mesh(sys.argv[1])
+    fullMandible = msh.Mesh(args.input)
+    fullMandible.applyMatrix(matFile="mat_Super4PCS.txt")
+    fullMandible.applyMatrix(matFile="mat_PythonICP.txt")
 
     # 2 - Scale to [0,1]
     MAT = fullMandible.toUnitMatrix()
-    np.savetxt("0_fullMandibleToUnit.txt",MAT)
+    np.savetxt("mat_toUnit.txt",MAT)
     fullMandible.applyMatrix(mat=MAT)
-    fullMandible.write("fullMandible.mesh")
-
-    # 3 - Align to the template full mandibule
-    """
-    command(exe.align + " -i fullMandible.mesh template_mandibule.mesh -d 0.1 -o 0.9", displayOutput=True)
-    command(exe.align + " -i fullMandible.mesh template_mandibule.mesh -d 0.1 -o 0.9", displayOutput=True)
-    fullMandible.applyMatrix(matFile="mat_Super4PCS.txt")
-    fullMandible.applyMatrix(matFile="mat_ICP.txt")
-    """
+    fullMandible.write("mandible.mesh")
 
     # 4 - Cut the mandible in two
     rightMandible = deepcopy(fullMandible)
@@ -46,12 +69,15 @@ if __name__=="__main__":
     #Generate the mask
     mask = [1 for i in range(len(leftMandible.tris))]
     mid = np.mean(leftMandible.verts,axis=0)[0]
+    print mid
     for i,t in enumerate(leftMandible.tris):
         for v in t:
-            if leftMandible.verts[v][0] < mid:
+            x = leftMandible.verts[v][0]
+            if x < mid:
                 mask[i] = 0
     #Create the left mandible
     leftMandible.tris = np.array([t for i,t in enumerate(leftMandible.tris) if mask[i]==1])
+    print len(leftMandible.tris)
     leftMandible.discardUnused()
     leftMAT = leftMandible.toUnitMatrix()
     np.savetxt("1_leftMandibleToUnit.txt", leftMAT)
@@ -66,11 +92,13 @@ if __name__=="__main__":
     rightMandible.verts[:,0] = 1-rightMandible.verts[:,0]
     rightMandible.write("rightMandible.mesh")
 
+
     # 5 - Create the shells for left and right mandibles
-    command(exe.boundingMesh + " leftMandible.mesh", displayOutput=True)
-    command(exe.shell + " leftMandible.hull.mesh", displayOutput=True)
-    #command(exe.boundingMesh + " rightMandible.mesh", displayOutput=True)
-    #command(exe.shell + " rightMandible.hull.mesh", displayOutput=True)
+    #command(exe.boundingMesh + " leftMandible.mesh", displayOutput=True)
+    command(exe.shell + " -i leftMandible.mesh -o leftShell.mesh -c", displayOutput=True)
+    command(exe.shell + " -i rightMandible.mesh -o rightShell.mesh -c", displayOutput=True)
+
+    sys.exit()
 
     # 6 - Warp the shell to the mandibles
     """
