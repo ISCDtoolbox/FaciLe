@@ -32,7 +32,7 @@ static void usage(char *prog) {
   
   fprintf(stdout,"\n** Generic options :\n");
   fprintf(stdout,"-h                Print this message \n");
-  fprintf(stdout,"-scale            scale template mesh (only for default template) \n");
+  fprintf(stdout,"-p                Print execution steps \n");
   
   
   fprintf(stdout,"\n**  File specifications\n");
