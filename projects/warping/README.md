@@ -17,9 +17,9 @@ make
 ### Usage
 In a terminal, run:
 
-usage: warping [- nit n] [-t template_file[.mesh]] -s source_file[.mesh]
+usage: warping [-h] [- nit n] [-t template_file[.mesh]] -s source_file[.mesh]
 
-If the -t template_file[.mesh] is not provided, the code takes in input a default spherical template ("sphere.mesh in the folder demo). 
+If the -t template_file[.mesh] is not provided, the code takes in input a default spherical template "sphere.mesh" (provided in the folder demo). 
 
 ### Authors and contributors
 
