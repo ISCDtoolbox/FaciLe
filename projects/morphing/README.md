@@ -1,6 +1,8 @@
 # Shape Morphing
+
 This repository contains the code morphing for deforming a template mesh onto a target shape associated to the journal article 
 http://www.sciencedirect.com/science/article/pii/S1631073X16300802. 
+
 ### Installation
  
 You can grab the sources by cloning this repository or downloading a .zip archive of the sources. In order to build the project, navigate to the created directory and in a command prompt type:
@@ -18,7 +20,16 @@ make
 
 ### Usage
 
-See the documentation folder (not yet available).  
+In a terminal, run:
+
+usage: morphing [-h] [-nit n] [-dref nref [refs]] [-bref nref [refs]] [-elref nref [refs]] target_file[.mesh] template_file[.mesh]  
+
+Together with the target_file[.mesh] a scalar field target_file.sol should be provided. 
+
+Please run:
+morphing [-h] 
+to see the default parameters. 
+
 
 ### Authors and contributors
 
