@@ -1,5 +1,6 @@
 # Shape Morphing
-
+This repository contains the code morphing for deforming a template mesh onto a target shape associated to the journal article 
+http://www.sciencedirect.com/science/article/pii/S1631073X16300802. 
 ### Installation
  
 You can grab the sources by cloning this repository or downloading a .zip archive of the sources. In order to build the project, navigate to the created directory and in a command prompt type:
