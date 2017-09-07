@@ -19,7 +19,7 @@ In a terminal, run:
 
 usage: warping [-h] [-p] [- nit n] [-load l] [-lame lambda mu] [-yp young poisson] [-t template_file[.mesh]] -s source_file[.mesh]
 
-If the -t template_file[.mesh] is not provided, the code takes in input a default spherical template "sphere.mesh" (provided in the folder demo). Use the option [-h] to inspect the default parameters. 
+If the -t template_file[.mesh] is not provided, the code takes in input a default spherical template "sphere.mesh" (provided in the folder demo). Run with the option [-h] to inspect the default parameters. 
 
 ### Authors and contributors
 
