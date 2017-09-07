@@ -1,4 +1,4 @@
-#include "wrapping.h"
+#include "warping.h"
 
 extern Info   info;
 
@@ -51,7 +51,7 @@ int loadMesh(pMesh mesh) {
 	mesh->nei = mesh->ne;
 
   /* memory alloc */
-	dof = info.typ == P2 ? 9 : 1;  /* bound on number of nodes */
+	dof = 1;
   mesh->point = (pPoint)calloc(dof*mesh->np+1,sizeof(Point));
   assert(mesh->point);
   if ( mesh->nt ) {
@@ -119,7 +119,7 @@ int loadMesh(pMesh mesh) {
           GmfGetLin(inm,GmfQuadrilaterals,&pq->v[0],&pq->v[1],&pq->v[2],&pq->v[3],&pq->ref);
       }
 
-    if ( abs(info.imprim) > 4 ) {
+    if ( info.imprim ) {
       fprintf(stdout,"  %%%% NUMBER OF VERTICES   %8d\n",mesh->np);
       if ( mesh->nt )  fprintf(stdout,"  %%%% NUMBER OF TRIANGLES  %8d\n",mesh->nt);
       if ( mesh->ne )  fprintf(stdout,"  %%%% NUMBER OF TETRAHEDRA %8d\n",mesh->ne);
@@ -138,7 +138,7 @@ int saveMesh(pMesh mesh) {
   char        *ptr,data[128];
 
   mesh->ver = GmfDouble;
-
+  
   strcpy(data,mesh->name);
   ptr = strstr(data,".mesh");
   if ( !ptr ) {
@@ -153,9 +153,13 @@ int saveMesh(pMesh mesh) {
       }
     }
   }
-  else if( !(inm = GmfOpenMesh(data, GmfWrite, mesh->ver,mesh->dim)) ) {
+  else {
+    *ptr = '\0';
+    strcat(data,".d.mesh");
+    if( !(inm = GmfOpenMesh(data, GmfWrite, mesh->ver,mesh->dim)) ){
     fprintf(stderr,"  ** UNABLE TO OPEN %s.\n",data);
     return(0);
+  }
   }
   fprintf(stdout,"  %%%% %s OPENED\n",data);
   GmfSetKwd(inm,GmfVertices,mesh->np);
@@ -293,96 +297,3 @@ int saveSol(pSol sol) {
   GmfCloseMesh(inm);
   return(1);
 }
-
-
-
-int saveSurf(pMesh mesh, char *filename) {
-  pPoint       ppt, p0, p1, p2;
-  pTria        pt1;
-  int          k,inm, i, countP = 0, countT=0, p=0, co=0,l;
-  char         data[128],*nameout=NULL;
-  
-  mesh->ver = GmfDouble;
-  strcpy(data,filename);
-  sprintf(data,"%s.int.mesh",nameout);
-  
-  if ( !(inm = GmfOpenMesh(data,GmfWrite,mesh->ver,mesh->dim)) ) {
-    fprintf(stderr,"  ** UNABLE TO OPEN %s\n",data);
-    return(0);
-  }
-  fprintf(stdout,"  %%%% %s OPENED\n",data);
-  
-  
-  
-  /* change reference for points in tria with ref n */
-  for (k=1; k<=mesh->nt; k++) {
-    pt1 = &mesh->tria[k];
-    if (pt1->ref == mesh->ref) { countT++;
-      for (i=0; i<3; i++) {
-        ppt = &mesh->point[pt1->v[i]];
-        if (ppt->ref != 70) {
-          ppt->ref = 70;
-          countP++;
-        }
-      }
-    }
-  }
-  
-  GmfSetKwd(inm,GmfVertices,countP);
-  
-  for (k=1; k<=mesh->nt; k++) {
-    pt1 = &mesh->tria[k];
-    if (pt1->ref == mesh->ref) {
-      
-      p0 = &mesh->point[pt1->v[0]];
-      p1 = &mesh->point[pt1->v[1]];
-      p2 = &mesh->point[pt1->v[2]];
-      
-      if(p0->ref==70) {
-        co++;
-        GmfSetLin(inm,GmfVertices,p0->c[0],p0->c[1],p0->c[2],p0->ref);
-        //p0->neword = co;
-        p0->ref=60;
-        }
-      
-      if(p1->ref==70) {
-        co++;
-        GmfSetLin(inm,GmfVertices,p1->c[0],p1->c[1],p1->c[2],p1->ref);
-        //p1->neword = co;
-        p1->ref=60;
-        }
-      
-      if(p2->ref==70) {
-        co++;
-        GmfSetLin(inm,GmfVertices,p2->c[0],p2->c[1],p2->c[2],p2->ref);
-        //p2->neword = co;
-        p2->ref=60;
-        l = pt1->v[2];
-        }
-      
-//      pt1->v[0] = p0->neword;
-//      pt1->v[1]=  p1->neword;
-//      pt1->v[2] = p2->neword;
-    }
-  }
-  
-  GmfSetKwd(inm,GmfTriangles,countT);
-  for (k=1; k<=mesh->nt; k++) {
-    pt1 = &mesh->tria[k];
-    if (pt1->ref == mesh->ref) {
-      p++;
-      GmfSetLin(inm,GmfTriangles,pt1->v[0],pt1->v[1],pt1->v[2],pt1->ref);
-    }
-  }
-  
-  
-  GmfCloseMesh(inm);
-  return(1);
-}
-
-
-
-
-
-
-

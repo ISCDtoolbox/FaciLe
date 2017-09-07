@@ -1,57 +1,6 @@
-#include "wrapping.h"
+#include "warping.h"
 
 extern Info   info;
-
-/* find boundary conds in list */
-pCl getCl(pSol sol,int ref,int elt) {
-  pCl     pcl;
-  int     i;
-  
-  for (i=0; i<sol->nbcl; i++) {
-    pcl = &sol->cl[i];
-    if ( (pcl->ref == ref) && (pcl->elt == elt) )  return(pcl);
-  }
-  return(0);
-}
-
-///* retrieve physical properties in list */
-//int getMat(pSol sol,int ref,double *lambda,double *mu) {
-//  pMat   pm;
-//  int    i;
-//  
-////  for (i=0; i<sol->nmat; i++) {
-////    pm = &sol->mat[i];
-////    if ( pm->ref == ref ) {
-//      *lambda = pm->lambda;
-//      *mu     = pm->mu;
-//      return(1);
-//    }
-//  }
-//  *lambda = LS_LAMBDA;
-//  *mu     = LS_MU;
-//  return(0);
-//}
-
-//static inline double volu_3d(double *a,double *b,double *c,double *d) {
-//  double    bx,by,bz,cx,cy,cz,dx,dy,dz,vx,vy,vz,dd;
-//
-//  bx  = b[0] - a[0];
-//  by  = b[1] - a[1];
-//  bz  = b[2] - a[2];
-//  cx  = c[0] - a[0];
-//  cy  = c[1] - a[1];
-//  cz  = c[2] - a[2];
-//  dx  = d[0] - a[0];
-//  dy  = d[1] - a[1];
-//  dz  = d[2] - a[2];
-//  
-//  /* test volume */
-//  vx  = cy*dz - cz*dy;
-//  vy  = cz*dx - cx*dz;
-//  vz  = cx*dy - cy*dx; 
-//  dd  = (bx*vx + by*vy + bz*vz) / 6.0;
-//  return(dd);
-//}
 
 /* compute triangle area and unit normal in 3d */
 static double area_3d(double *a,double *b,double *c,double *n) {
@@ -134,41 +83,19 @@ static int invmatg(double m[9],double mi[9]) {
 }
 
 static int setTGV_3d(pMesh mesh,pSol sol,pCsr A) {
-  pCl      pcl;
-  pTria    ptt;
   pPoint   ppt;
-  int      k,ig;
-	char     i;
+  int      k;
 
   /* at vertices */
-  if ( sol->cltyp & LS_Ver ) {
-    for (k=1; k<=mesh->np; k++) {
-      ppt = &mesh->point[k];
-      if ( !ppt->ref )  continue;
-      pcl = getCl(sol,ppt->ref,LS_Ver);
-      if ( pcl && pcl->typ == Dirichlet ) {
-        csrSet(A,3*(k-1)+0,3*(k-1)+0,LS_TGV);
-        csrSet(A,3*(k-1)+1,3*(k-1)+1,LS_TGV);
-        csrSet(A,3*(k-1)+2,3*(k-1)+2,LS_TGV);
-      }
-    }
-  }
-  if ( sol->cltyp & LS_Tri ) {
-    for (k=1; k<=mesh->nt; k++) {
-      ptt = &mesh->tria[k];
-      if ( !ptt->v[0] )  continue;
-      pcl = getCl(sol,ptt->ref,LS_Tri);
-      if ( !pcl )  continue;
-      else if ( pcl->typ == Dirichlet ) {
-        for (i=0; i<3; i++) {
-					ig = ptt->v[i];
-					csrSet(A,3*(ig-1)+0,3*(ig-1)+0,LS_TGV);
-					csrSet(A,3*(ig-1)+1,3*(ig-1)+1,LS_TGV);
-					csrSet(A,3*(ig-1)+2,3*(ig-1)+2,LS_TGV);
+for (k=1; k<=mesh->np; k++) {
+        ppt = &mesh->point[k];
+        if(ppt->ref ==25){
+          csrSet(A,3*(k-1)+0,3*(k-1)+0,LS_TGV);
+          csrSet(A,3*(k-1)+1,3*(k-1)+1,LS_TGV);
+          csrSet(A,3*(k-1)+2,3*(k-1)+2,LS_TGV);
         }
       }
-    } 
-  }
+  
   return(1);
 }
 
@@ -177,7 +104,7 @@ static pCsr matA_P1_3d(pMesh mesh,pSol sol) {
   pCsr     A;
   pTetra   pt;
   double  *a,*b,*c,*d,DeD[81],m[9],im[9],Ae[12][12],mm[9][12],nn[9][12],Dp[3][4];
-  double   lambda,mu,vol;
+  double   vol;
   int      i,j,k,s,ia,ja,il,ic,ig,jg,nr,nc,nbe;
 
 	/* memory allocation (rough estimate) */
@@ -198,19 +125,10 @@ static pCsr matA_P1_3d(pMesh mesh,pSol sol) {
     if ( !pt->v[0] )  continue;
 
     /* tD E D */
-    //if ( !getMat(sol,pt->ref,&lambda,&mu) )  continue;
-    
-    //lambda = LS_LAMBDA;
-    //mu     = LS_MU;
-    
-    lambda = LS_E * LS_NU /( (1 + LS_NU)*(1-2*LS_NU));
-    mu     = LS_E /( 2*(1 + LS_NU));
-    
-    
-    DeD[0]  = DeD[40] = DeD[80] = 2*mu + lambda;
-    DeD[4]  = DeD[8]  = DeD[36] = DeD[44] = DeD[72] = DeD[76] = lambda;
-    DeD[10] = DeD[12] = DeD[20] = DeD[24] = DeD[28] = DeD[30] = mu; 
-    DeD[50] = DeD[52] = DeD[56] = DeD[60] = DeD[68] = DeD[70] = mu;
+    DeD[0]  = DeD[40] = DeD[80] = 2*info.mu + info.lambda;
+    DeD[4]  = DeD[8]  = DeD[36] = DeD[44] = DeD[72] = DeD[76] = info.lambda;
+    DeD[10] = DeD[12] = DeD[20] = DeD[24] = DeD[28] = DeD[30] = info.mu;
+    DeD[50] = DeD[52] = DeD[56] = DeD[60] = DeD[68] = DeD[70] = info.mu;
 
     /* measure of K */
     a = &mesh->point[pt->v[0]].c[0]; 
@@ -278,8 +196,7 @@ static pCsr matA_P1_3d(pMesh mesh,pSol sol) {
   }
 	setTGV_3d(mesh,sol,A);
 	csrPack(A);
-	if ( abs(info.imprim) > 5 || info.ddebug )
-    fprintf(stdout,"     A: %6d x %6d  sparsity %7.4f%%\n",nr,nc,100.0*A->nbe/nr/nc);
+  
   return(A);
 }
 
@@ -287,97 +204,42 @@ static pCsr matA_P1_3d(pMesh mesh,pSol sol) {
 static double *rhsF_P1_3d(pMesh mesh,pSol sol) {
   pTria    ptt;
   pPoint   ppt;
-  pCl      pcl;
-  double  *F,*vp,*v,aire,vol,n[3],w[3],*a,*b,*c;
+  double  *F,*vp,aire,n[3],w[3],*a,*b,*c;
   int      k,ig,size;
   char     i;
 
-  if ( abs(info.imprim) > 5 )  fprintf(stdout,"     Gravity and body forces\n");
   size = sol->dim*sol->np;
   F = (double*)calloc(size,sizeof(double));
   assert(F);
-
-//  /* gravity as external force */
-//  if ( info.load && (1<<0) ) {
-//    for (k=1; k<=mesh->ne; k++) {
-//      pt = &mesh->tetra[k];
-//      if ( !pt->v[0] )  continue;
-//
-//      /* measure of K */
-//      a = &mesh->point[pt->v[0]].c[0]; 
-//      b = &mesh->point[pt->v[1]].c[0]; 
-//      c = &mesh->point[pt->v[2]].c[0];
-//      d = &mesh->point[pt->v[3]].c[0];
-//      vol = volu_3d(a,b,c,d) / 4.0;
-//      for (i=0; i<4; i++) {
-//        ig = pt->v[i];
-//        F[3*(ig-1)+0] += vol * info.gr[0];
-//        F[3*(ig-1)+1] += vol * info.gr[1];
-//        F[3*(ig-1)+2] += vol * info.gr[2];
-//      }
-//    }
-//  }
-//
-  /* nodal boundary conditions */
-    
-    /* pcl uninitialized here*/
-    
-   if ( sol->cltyp & LS_Ver ) {
+  
     for (k=1; k<=mesh->np; k++) {
       ppt = &mesh->point[k];
       if ( !ppt->ref )  continue;
-        pcl = getCl(sol,ppt->ref,LS_Ver);
-      if ( !pcl )  continue;
-      else if ( pcl->typ == Dirichlet ) {
-        vp = pcl->att == 'v' ? &pcl->u[0] : &sol->u[3*(k-1)];
+      if( ppt->ref ==25 ) {
+        vp = &sol->u[3*(k-1)];
           
         F[3*(k-1)+0] = LS_TGV * vp[0];
         F[3*(k-1)+1] = LS_TGV * vp[1];
         F[3*(k-1)+2] = LS_TGV * vp[2];
       }
-      else if ( pcl->typ == Load ) { // a revoir, il y a un pb ici
-		vp = pcl->att == 'v' ? &pcl->u[0] : &sol->u[3*(k-1)];
-        F[3*(k-1)+0] += vp[0];
-        F[3*(k-1)+1] += vp[1];
-        F[3*(k-1)+2] += vp[2];
-      }
     }
-  }
 
-  if ( sol->cltyp & LS_Tri ) {
     for (k=1; k<=mesh->nt; k++) {
       ptt = &mesh->tria[k];
       if ( !ptt->v[0] )  continue;
-      pcl = getCl(sol,ptt->ref,LS_Tri);
-      if ( !pcl )  continue;
-      else if ( pcl->typ == Dirichlet ) {
-        for (i=0; i<3; i++) {
-	      ig = ptt->v[i];
-          v = pcl->att == 'v' ? &pcl->u[0] : &sol->u[3*(ptt->v[i]-1)];
-          F[3*(ig-1)+0] = LS_TGV * v[0];
-          F[3*(ig-1)+1] = LS_TGV * v[1];
-          F[3*(ig-1)+2] = LS_TGV * v[2];
-        }
-      }
-      else if ( pcl->typ == Load ) {
-      	a = &mesh->point[ptt->v[0]].c[0];
+      if( ptt->ref == mesh->ref){
+     	a = &mesh->point[ptt->v[0]].c[0];
         b = &mesh->point[ptt->v[1]].c[0];
         c = &mesh->point[ptt->v[2]].c[0];
         aire = area_3d(a,b,c,n) / 3.0;
-
-		 if (pcl->att == 'v' ) {
+      
         for (i=0; i<3; i++) {
-          ig = ptt->v[i];
-          ppt = &mesh->point[ig];
-          F[3*(ig-1)+0] += aire * pcl->u[0];
-          F[3*(ig-1)+1] += aire * pcl->u[1];
-          F[3*(ig-1)+2] += aire * pcl->u[2];        
-          }
-		 	}
-		 	else if (pcl->att == 'n') {
-        w[0] = pcl->u[0] * n[0];
-        w[1] = pcl->u[0] * n[1];
-        w[2] = pcl->u[0] * n[2];
+        ig = ptt->v[i];
+        ppt = &mesh->point[ig];
+      
+        w[0] = info.load * n[0];
+        w[1] = info.load * n[1];
+        w[2] = info.load * n[2];
         for (i=0; i<3; i++) {
           ig = ptt->v[i];
           ppt = &mesh->point[ig];
@@ -385,36 +247,33 @@ static double *rhsF_P1_3d(pMesh mesh,pSol sol) {
           F[3*(ig-1)+1] += aire * w[1]; 
           F[3*(ig-1)+2] += aire * w[2]; 
         }
-		 	}
+       }
       }
     }
-  }
+  
 	return(F);
 }
 
 /* linear elasticity */
 int elasti1_3d(pMesh mesh,pSol sol) {
   pCsr     A;
-  //Hash     hash;
-  pCl      pcl;
 	double  *F,err;
-	int      i,ier,nit;
-	char     load,stim[32];
-
-  if ( abs(info.imprim) > 4 )  fprintf(stdout,"  1.1 ASSEMBLY\n");
+	int      ier,nit;
+	char     stim[32];
+  
+  if ( info.imprim )  fprintf(stdout,"   1.1 Assembly \n");
 
   /* -- Part I: matrix assembly */
   chrono(ON,&info.ctim[3]);
-  if ( abs(info.imprim) > 4 )  fprintf(stdout,"     Assembly FE matrix\n");
 
   /* alloc memory */
   sol->dim = mesh->dim;
   sol->ver = mesh->ver;
   sol->np  = mesh->np;
-if ( !sol->u ) {
-sol->u  = (double*)calloc(3*(mesh->npi+mesh->np2),sizeof(double));
-assert(sol->u);
-}
+ if ( !sol->u ) {
+ sol->u  = (double*)calloc(3*(mesh->npi+mesh->np2),sizeof(double));
+ assert(sol->u);
+ }
 /* build matrix */
   A = 0;
 	F = 0;
@@ -424,24 +283,14 @@ assert(sol->u);
   printim(info.ctim[3].gdif,stim);
   if ( abs(info.imprim) > 4 )
     fprintf(stdout,"     [Time: %s]\n",stim);
-    
-  /* scan for Load conditions */
-  load = 0;
-  for (i=0; i<=sol->nbcl; i++) {
-    pcl = &sol->cl[i];
-    if ( pcl->typ == Load ) {
-      load = 1;
-      break;
-    }
-  }
 
   /* -- Part II: solver */
   chrono(ON,&info.ctim[4]);
 	if ( info.ncpu > 1 )  csrInit(info.ncpu);
 	err = sol->err;
 	nit = sol->nit;
-  if ( abs(info.imprim) > 4 )  fprintf(stdout,"  1.2 SOLVING  %d\n",1-load);
-  ier = csrPrecondGrad(A,sol->u,F,&err,&nit,1-load);
+  if ( abs(info.imprim) > 4 )  fprintf(stdout,"  1.2 SOLVING  \n");
+  ier = csrPrecondGrad(A,sol->u,F,&err,&nit,0);
   if  ( info.ncpu > 1 )  csrStop();
   if ( ier <= 0 )  fprintf(stdout,"  ## SOL NOT CONVERGED: ier= %d  err= %E  nit= %d\n",ier,err,nit);
   else if ( abs(info.imprim) > 4 )
@@ -454,6 +303,5 @@ assert(sol->u);
   if ( abs(info.imprim) > 4 )
     fprintf(stdout,"     [Time: %s]\n",stim);
 
-  //return(ier > 0);
-    return(1);
+  return(ier > 0);
 }

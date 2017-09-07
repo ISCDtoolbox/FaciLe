@@ -1,4 +1,4 @@
-#include "wrapping.h"
+#include "warping.h"
 extern Info   info;
 
 /* initialization for envelope template */
@@ -31,11 +31,7 @@ int initialization( pMesh extmesh, pMesh intmesh ) {
   
   ptt = &extmesh->tria[nbpt];
   extmesh->ref = ptt->ref;
-  
-//  for (i=0; i<3; i++) {
-//    extmesh->min[i] =  FLT_MAX;
-//    extmesh->max[i] =  -FLT_MAX;
-//  }
+
   /* initialize countmax */
   countmax = 0;
   for (k=1; k<=extmesh->nt; k++) {
@@ -45,10 +41,6 @@ int initialization( pMesh extmesh, pMesh intmesh ) {
         ppt = &extmesh->point[ptt->v[i]];
         if (!(ppt->ref == 30)) countmax ++;
         ppt->ref = 30 ;
-//        for (l=0; l<3; l++) {
-//          if ( ppt->c[l] > extmesh->max[l] )  extmesh->max[l] = ppt->c[l];
-//          if ( ppt->c[l] < extmesh->min[l] )  extmesh->min[l] = ppt->c[l];
-//        }
       }
     }
   }
@@ -111,7 +103,6 @@ int  initializationsphere(pMesh extmesh,pMesh intmesh){
       }
     }
   }
-  
   ptt = &extmesh->tria[nbpt];
   extmesh->ref = ptt->ref;
   
