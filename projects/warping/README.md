@@ -1,7 +1,7 @@
 # Warping
 This repository contains the code morphing for warping a source mesh by deforming a closed template mesh. 
 
-### Installation (in progress)
+### Installation
 You can grab the sources by cloning this repository or downloading a .zip archive of the sources. In order to build the project, navigate to the created directory and in a command prompt type:
 
 mkdir build
@@ -17,9 +17,9 @@ make
 ### Usage
 In a terminal, run:
 
-usage: warping [-h] [- nit n] [-t template_file[.mesh]] -s source_file[.mesh]
+usage: warping [-h] [-p] [- nit n] [-load l] [-lame lambda mu] [-yp young poisson] [-t template_file[.mesh]] -s source_file[.mesh]
 
-If the -t template_file[.mesh] is not provided, the code takes in input a default spherical template "sphere.mesh" (provided in the folder demo). 
+If the -t template_file[.mesh] is not provided, the code takes in input a default spherical template "sphere.mesh" (provided in the folder demo). Use the option [-h] to inspect the default parameters. 
 
 ### Authors and contributors
 
