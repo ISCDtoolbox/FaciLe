@@ -24,14 +24,20 @@ The square braces indicate optional arguments. Some commands have flags, some ot
 The options and flags are:
 
 -h                         show the default parameters and exit
+
 -p                         print output at each iteration
+
 -nit  n                    number of iterations desired
+
 -load l                    pressure magnitude 
+
 -lame lambda mu            Lame coefficients 
+
 -yp   young poisson        Young and Poisson coefficients
   
 
 -t template_file.mesh      name of the template mesh file ( optional )
+
 -s source_file.mesh        name of the source mesh file ( mandatory )
 
 When the -t template_file[.mesh] is not provided, the code takes in input a default spherical template "sphere.mesh" (provided in the folder demo). 
