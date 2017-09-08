@@ -66,6 +66,7 @@ set(PYTHONICP_EXE   "python ${CMAKE_SOURCE_DIR}/projects/alignement/icp.py")
 set(APPLYMATRIX_EXE "python ${CMAKE_SOURCE_DIR}/projects/tools/applyTransformationMatrix.py")
 set(PCA_EXE         "python ${CMAKE_SOURCE_DIR}/projects/ACP/PCA.py")
 set(FILLTOMORPH_EXE "python ${CMAKE_SOURCE_DIR}/projects/tools/fillForMorphing.py")
+set(DISTANCE_EXE    "python ${CMAKE_SOURCE_DIR}/projects/tools/computeDistances.py")
 
 #Creating the python file for paths
 configure_file(executable_paths.py.in ${CMAKE_SOURCE_DIR}/pipeline/executable_paths.py)
