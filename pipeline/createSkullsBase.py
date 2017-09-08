@@ -74,66 +74,18 @@ if __name__=="__main__":
     command(exe.warping + " shell.mesh skull.o2.mesh")
 
     # 7 - Signed distance
-
-
-    """
-    # 2 - Scale to [0,1]
-    MAT = fullMandible.toUnitMatrix()
-    np.savetxt("mat_toUnit.txt",MAT)
-    fullMandible.applyMatrix(mat=MAT)
-    fullMandible.write("mandible.mesh")
-
-    # 4 - Cut the mandible in two
-    rightMandible = deepcopy(fullMandible)
-    leftMandible = fullMandible
-    #Generate the mask
-    mask = [1 for i in range(len(leftMandible.tris))]
-    mid = np.mean(leftMandible.verts,axis=0)[0]
-    print mid
-    for i,t in enumerate(leftMandible.tris):
-        for v in t:
-            x = leftMandible.verts[v][0]
-            if x < mid:
-                mask[i] = 0
-    #Create the left mandible
-    leftMandible.tris = np.array([t for i,t in enumerate(leftMandible.tris) if mask[i]==1])
-    print len(leftMandible.tris)
-    leftMandible.discardUnused()
-    leftMAT = leftMandible.toUnitMatrix()
-    np.savetxt("1_leftMandibleToUnit.txt", leftMAT)
-    leftMandible.applyMatrix(mat=leftMAT)
-    leftMandible.write("leftMandible.mesh")
-    #And the right one, symetrized
-    rightMandible.tris = np.array([t for i,t in enumerate(rightMandible.tris) if mask[i]==0])
-    rightMandible.discardUnused()
-    rightMAT = rightMandible.toUnitMatrix()
-    np.savetxt("1_rightMandibleToUnit.txt", rightMAT)
-    rightMandible.applyMatrix(mat=rightMAT)
-    rightMandible.verts[:,0] = 1-rightMandible.verts[:,0]
-    rightMandible.write("rightMandible.mesh")
-
-
-    # 5 - Create the shells for left and right mandibles
-    #command(exe.boundingMesh + " leftMandible.mesh", displayOutput=True)
-    command(exe.shell + " -i leftMandible.mesh -o leftShell.mesh -c", displayOutput=True)
-    command(exe.shell + " -i rightMandible.mesh -o rightShell.mesh -c", displayOutput=True)
-
-    sys.exit()
-
-
-    # 7 - Create a domain for mshdist computation
-    #Right mandible
     cube=msh.Mesh(cube=[0,1,0,1,0,1])
-    cube.write("rightBox.mesh")
-    command( "tetgen -pgANEF rightBox.mesh")
-    command( "mmg3d_O3 rightBox.1.mesh -hausd " + str(np.max(mesh.dims)/25) + " -hmax " + str(np.max(mesh.dims)/25))
-    command( "mshdist -ncpu 4 -noscale rightBox.1.o.mesh rightMandible.warped.mesh")
+    cube.write("box.mesh")
+    command( "tetgen -pgANEF box.mesh")
+    command( "mmg3d_O3 box.1.mesh -hausd " + str(np.max(skull.dims)/25) + " -hmax " + str(np.max(skull.dims)/25))
+    command( "mshdist -ncpu 4 -noscale box.1.o.mesh skull.warped.mesh")
 
-    # 9 - Morphing the template_mandibule surface to the computed boxes
-    command(morphing + " template_halfMandible_volume.mesh rightBox.1.o.mesh")
+    # 8 - Morph the reference onto the skull and extract the surface displacement
+    command(exe.morphing + " template_skull.mesh box.1.o.mesh")
+    #To do with chiara's code later, here at least it works
+    template = msh.Mesh("template_skull.mesh")
+    morphed  = msh.Mesh("morphed.mesh")
+    dists = [ np.linalg.norm(v1-v2) for v1,v2 in zip(template.verts[:,:3], morphed.verts[:,:3]) ]
 
-    # 10 - Extract the surface from the morphing results
-    morphed = msh.Mesh("morphed.mesh")
-    morphed.readSol()
-    morphed.extractSurfaces#Placeholder
-    """
+    # 9 - Generate "la masque"
+    #???
