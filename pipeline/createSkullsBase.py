@@ -79,13 +79,15 @@ if __name__=="__main__":
     command( "tetgen -pgANEF box.mesh")
     command( "mmg3d_O3 box.1.mesh -hausd " + str(np.max(skull.dims)/25) + " -hmax " + str(np.max(skull.dims)/25))
     command( "mshdist -ncpu 4 -noscale box.1.o.mesh skull.warped.mesh")
-
-    # 8 - Morph the reference onto the skull and extract the surface displacement
-    command(exe.morphing + " template_skull.mesh box.1.o.mesh")
+    
+    # 8 - Create the reference skull 
+    
+    # 9 - Morph the reference onto the skull and extract the surface displacement
+    command(exe.morphing + "box.1.o.mesh template_skull.mesh")
     #To do with chiara's code later, here at least it works
     template = msh.Mesh("template_skull.mesh")
     morphed  = msh.Mesh("morphed.mesh")
     dists = [ np.linalg.norm(v1-v2) for v1,v2 in zip(template.verts[:,:3], morphed.verts[:,:3]) ]
 
-    # 9 - Generate "la masque"
+    # 10 - Generate "la masque"
     #???
