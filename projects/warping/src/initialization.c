@@ -127,17 +127,6 @@ int  initializationsphere(pMesh extmesh,pMesh intmesh){
     }
   }
   
-  for (k=1; k<=extmesh->nt; k++) {
-    ptt = &extmesh->tria[k];
-    if ( ptt->ref != extmesh->ref){
-      for (i=0; i<3 ; i++) {
-        ppt = &extmesh->point[ptt->v[i]];
-        ppt->ref = 25;
-      }
-      break;
-    }
-  }
-  
   for (m=0; m<3; m++) {
     extmesh->o[m] = 0.5*( extmesh->max[m] + extmesh->min[m]);
     extmesh->Ray[m] = extmesh->max[m] - extmesh->o[m];
