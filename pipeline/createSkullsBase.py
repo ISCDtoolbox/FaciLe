@@ -57,7 +57,7 @@ if __name__=="__main__":
     skull.computeBBox()
     skull.write("skull.mesh")
 
-    # 3 - Remesh with two haussdorf distance factors
+    # 3 - Remesh with two hausdorff distance factors
     command(exe.mmgs + " skull.mesh -o skull.o1.mesh -nr -hausd " + str(np.max(skull.dims)/100.) )
     command(exe.mmgs + " skull.mesh -o skull.o2.mesh -nr -hausd " + str(np.max(skull.dims)/1000.) )
 
