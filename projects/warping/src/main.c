@@ -296,7 +296,7 @@ int main(int argc,char **argv) {
   }
   stop = 1;
   
-  while( count <= 0.8*countmax && count3 <=info.nit ) {
+  while( count <= countmax && count3 <=info.nit ) {
     sol.err = LS_RES;
     if (!elasti1_3d(&extmesh,&sol) ) break;
     count1 = count;
