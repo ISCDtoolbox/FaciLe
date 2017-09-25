@@ -1,3 +1,7 @@
+"""
+Si blender est disponible, on peut faire un shrinkwrap + remesh suivi d'un levelset avec remesh
+"""
+
 from scipy   import ndimage as nd
 from skimage import measure as mea
 import numpy as np
@@ -5,7 +9,8 @@ import os
 import msh
 import sys
 import argparse
-sys.path.append(os.path.join(os.path.dirname(__file__),"../"))
+sys.path.append(os.path.join(os.path.dirname(__file__),"../../pipeline/"))
+print sys.path
 import executable_paths as exe
 
 def command(cmd, displayOutput=False):
@@ -137,4 +142,4 @@ if __name__=="__main__":
     final.discardUnused()
     final.write(args.output)
     #Last volume remesh
-    command("mmg3d_O3 " + args.output +  " -hausd " + str(np.max(final.dims)/1000))
+    command("mmg3d_O3 " + args.output +  " -hausd " + str(np.max(final.dims)/5000))

@@ -101,10 +101,9 @@ if __name__=="__main__":
     sys.exit()
 
     # 6 - Warp the shell to the mandibles
-    """
     command(exe.warping + " leftMandible.shell.mesh leftMandible.mesh")
     command(exe.warping + " rightMandible.shell.mesh rightMandible.mesh")
-    """
+
 
     # 7 - Create a domain for mshdist computation
     #Right mandible
