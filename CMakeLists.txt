@@ -29,13 +29,18 @@ else()
 endif()
 
 find_program(MMGS mmgs_O3)
-find_program(MMG3D mmgs_O3)
-if(MMGS AND MMG3D)
+if(MMGS)
   message("-- Found mmgs: ${MMGS}")
-  message("-- Found mmg3d: ${MMG3D}")
   set(MMGS_EXE ${MMGS})
+endif()
+
+find_program(MMG3D mmg3d_O3)
+if(MMG3D)
+  message("-- Found mmg3d: ${MMG3D}")
   set(MMG3D_EXE ${MMG3D})
-else()
+endif()
+
+if(NOT MMG3D OR NOT MMGS)
   message("-- Will install mmgTools")
   ExternalProject_Add(mmgTools GIT_REPOSITORY https://github.com/MmgTools/mmg.git INSTALL_COMMAND "" PREFIX ext/mmgTools)
   set(MMGS_EXE ${CMAKE_CURRENT_BINARY_DIR}/ext/mmgTools/src/mmgTools/bin/mmgs_O3)
@@ -67,6 +72,9 @@ set(APPLYMATRIX_EXE "python ${CMAKE_SOURCE_DIR}/projects/tools/applyTransformati
 set(PCA_EXE         "python ${CMAKE_SOURCE_DIR}/projects/ACP/PCA.py")
 set(FILLTOMORPH_EXE "python ${CMAKE_SOURCE_DIR}/projects/tools/fillForMorphing.py")
 set(DISTANCE_EXE    "python ${CMAKE_SOURCE_DIR}/projects/tools/computeDistances.py")
+#Pipeline executables
+set(SKULL_EXE      "python ${CMAKE_SOURCE_DIR}/pipeline/processSkull.py")
+set(MANDS_EXE      "python ${CMAKE_SOURCE_DIR}/pipeline/processMandibleAndMasseter.py")
 
 #Creating the python file for paths
 configure_file(executable_paths.py.in ${CMAKE_SOURCE_DIR}/pipeline/executable_paths.py)

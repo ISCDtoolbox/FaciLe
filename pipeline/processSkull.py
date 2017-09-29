@@ -47,47 +47,74 @@ if __name__=="__main__":
 
     args = parse()
     checkArgs(args)
+    root = ".".join(args.input.split("/")[-1].split(".")[:-1])
+    print root
 
     #1 - Load the mesh
     skull = msh.Mesh(args.input)
 
     # 2 - Scale by a fixed factor and align to the template
+    skull.verts[:,:3] -= skull.center
     skull.verts[:,:3] *= 0.0035
-    skull.verts[:,:3] += [0.5,0.5,0.5] - skull.center
+    skull.verts[:,:3] += [0.5,0.5,0.5]
     skull.computeBBox()
-    skull.write("skull.mesh")
+    skull.write(root + ".scaled.mesh")
 
     # 3 - Remesh with two hausdorff distance factors
-    command(exe.mmgs + " skull.mesh -o skull.o1.mesh -nr -hausd " + str(np.max(skull.dims)/100.) )
-    command(exe.mmgs + " skull.mesh -o skull.o2.mesh -nr -hausd " + str(np.max(skull.dims)/1000.) )
+    command(exe.mmgs + " " + root + ".scaled.mesh -o " + root + ".o1.mesh -nr -hausd 0.007" )
+    command(exe.mmgs + " " + root + ".scaled.mesh -o " + root + ".o2.mesh -nr -hausd 0.0007" )
 
     # 4 - Align to the template skull
-    command(exe.align + " -i skull.o1.mesh -d 50 -o 0.95", displayOutput=True)
-    command(exe.pythonICP + " -s skull.o1.mesh -t " + args.template + " -m mat_PythonICP.txt")
-    #fullMandible.applyMatrix(matFile="mat_Super4PCS.txt")
-    #fullMandible.applyMatrix(matFile="mat_PythonICP.txt")
+    command(exe.align + " -i " + root + ".o1.mesh "+args.template+" -d 0.1 -o 0.95", displayOutput=True)
+    os.system("mv mat_Super4PCS.txt " + root + "_mat_1_super4pcs.txt")
+    os.system("mv mat_ICP.txt " + root + "_mat_2_cppICP.txt")
+    command(exe.pythonICP + " -s " + root + ".o1.mesh -t " + args.template + " -m "+root+"_mat_3_pyICP.txt")
 
-    # 5 -Create the warping shell with carving
-    command(exe.shell + " - i " + args.input[:-5] + ".o1.mesh -o shell.mesh -c")
+    # 5 - Apply the transformation matrices
+    remeshed = msh.Mesh(root + ".o1.mesh")
+    remeshed.applyMatrix(matFile=root + "_mat_1_super4pcs.txt")
+    remeshed.applyMatrix(matFile=root + "_mat_2_cppICP.txt")
+    remeshed.applyMatrix(matFile=root + "_mat_3_pyICP.txt")
+    remeshed.write(root + ".o1.mesh")
 
-    # 6 - Warp
-    command(exe.warping + " shell.mesh skull.o2.mesh")
+    # 6 - Create the warping shell with carving
+    #command(exe.shell + " -i " + root + ".o1.mesh -o shell.mesh -c")
 
-    # 7 - Signed distance
+    # 7 - Warp
+    #command(exe.warping + " " + root + ".o1.mesh -t shell.mesh -p -load 50", displayOutput=True)
+    command(exe.warping + " " + root + ".o1.mesh -p -load 150", displayOutput=True)
+
+    # 8 - Extract the interior surface
+    warped = msh.Mesh("sphere.d.mesh")
+    ext_ref = 2
+    warped.tris = warped.tris[warped.tris[:,-1] != ext_ref]
+    warped.tets = np.array([])
+    warped.discardUnused()
+    warped.write(root + ".warped.mesh")
+
+    # 9 - ICP alignement on the warped meshes
+    command(exe.pythonICP + " -s " + root + ".warped.mesh -t " + args.template + " -m "+root+"_mat_4_pyICP.txt -mIts 300 -tol 0.00001 -mPts 10000")
+    warped.applyMatrix(matFile=root + "_mat_4_pyICP.txt")
+    warped.write(root + ".warped.mesh")
+
+    # 10 - Signed distance
     cube=msh.Mesh(cube=[0,1,0,1,0,1])
-    cube.write("box.mesh")
-    command( "tetgen -pgANEF box.mesh")
-    command( "mmg3d_O3 box.1.mesh -hausd " + str(np.max(skull.dims)/25) + " -hmax " + str(np.max(skull.dims)/25))
-    command( "mshdist -ncpu 4 -noscale box.1.o.mesh skull.warped.mesh")
-    
-    # 8 - Create the reference skull 
-    
-    # 9 - Morph the reference onto the skull and extract the surface displacement
+    cube.write(root + ".box.mesh")
+    command( exe.tetgen + " -pgANEF " + root + ".box.mesh")
+    command( exe.mmg3d + " "+root+".box.1.mesh -hausd " + str(np.max(remeshed.dims)/25) + " -hmax " + str(np.max(remeshed.dims)/25))
+    command( exe.mshdist + " -ncpu 4 -noscale "+root+".box.1.o.mesh " + root + ".warped.mesh")
+
+    # TO DO LAST - clean the working directories
+    for ext in [".warped.mesh", ".box.1.o*", "*mat*.txt","_OUT.txt"]:
+        os.system("mv " + root + ext + " " + args.outputDir)
+    os.system("rm " + root + "*.mesh " + root + "*.sol")
+
+    # 11 - Morph the reference onto the skull and extract the surface displacement
+    """
     command(exe.morphing + "box.1.o.mesh template_skull.mesh")
     #To do with chiara's code later, here at least it works
     template = msh.Mesh("template_skull.mesh")
     morphed  = msh.Mesh("morphed.mesh")
     dists = [ np.linalg.norm(v1-v2) for v1,v2 in zip(template.verts[:,:3], morphed.verts[:,:3]) ]
-
+    """
     # 10 - Generate "la masque"
-    #???
