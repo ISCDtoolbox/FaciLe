@@ -36,8 +36,8 @@
 #define LS_MAXIT      10000
 #define LS_TGV        1.e+30
 
-#define MAXIT         40
-#define LOAD          200 
+#define MAXIT         100
+#define LOAD          30 
 
 #define LS_MAX(a,b)   ( ((a) < (b)) ? (b) : (a) )
 #define LS_MIN(a,b)   ( ((a) < (b)) ? (a) : (b) )
@@ -74,14 +74,14 @@ typedef Tetra * pTetra;
 typedef struct {
   double   delta,min[3],max[3];
   double   lambda, mu, e, nu, load;
-  int      ncpu,scale,nit;
+  int      ncpu,nit,debug;
   char     imprim,cg,rhs;
   mytime   ctim[TIMEMAX];
 } Info;
 
 typedef struct {
   int      np,np2,na,nt,ne,npi,nai,nq,nti,nei,hmax,hcur,ver,dim,mark,ref;
-  char     *name;
+  char     *name,*nameout;
   double   min[3],max[3],Ray[3],o[3];
   
   pPoint   point;
@@ -117,7 +117,7 @@ int     distance(pMesh ,pMesh ,pBucket,pSol, int);
 int     distancequad(pMesh ,pMesh ,pSol,int);
 int     initialization(pMesh ,pMesh);
 int     initializationsphere(pMesh ,pMesh);
-int     saveMesh(pMesh);
+int     saveMesh(pMesh, int);
 int     moveMesh(pMesh,pSol);
 int     elasti1_3d(pMesh ,pSol );
 pBucket newBucket_3d(pMesh ,int );

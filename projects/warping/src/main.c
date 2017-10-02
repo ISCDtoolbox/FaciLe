@@ -38,6 +38,7 @@ static void usage(char *prog) {
   fprintf(stdout,"\n**  File specifications\n");
   fprintf(stdout,"-t template[.mesh]   input triangulation to be deformed (default %s) \n","sphere");
   fprintf(stdout,"-s source[.mesh]     input triangulation to be warped\n");
+  fprintf(stdout,"-o output[.mesh]     output filename \n");
   
   fprintf(stdout,"\n** Parameters\n");
   fprintf(stdout,"-nit n            iterations (default %d)\n",MAXIT);
@@ -61,6 +62,12 @@ static int parsar(int argc,char *argv[],pMesh extmesh, pMesh intmesh,pSol sol) {
           usage(argv[0]);
           
           break;
+        case 'd':
+          if ( !strcmp(argv[i],"-debug") ) {
+              info.debug = 1;
+           }
+            break;
+
         case 'e':
           if ( !strcmp(argv[i],"-err") ) {
             ++i;
@@ -75,7 +82,6 @@ static int parsar(int argc,char *argv[],pMesh extmesh, pMesh intmesh,pSol sol) {
           if ( !strcmp(argv[i],"-t") ) {
             ++i;
             extmesh->name = argv[i];
-            info.scale = 0;
           }
           break;
           
@@ -99,6 +105,12 @@ static int parsar(int argc,char *argv[],pMesh extmesh, pMesh intmesh,pSol sol) {
         case 'p':
           if ( !strcmp(argv[i],"-p") ){
             info.imprim = 1;
+          }
+          break;
+        case 'o':
+          if ( !strcmp(argv[i],"-o") ){
+            ++i;
+            extmesh->nameout = argv[i];
           }
           break;
           
@@ -178,13 +190,13 @@ static int parsar(int argc,char *argv[],pMesh extmesh, pMesh intmesh,pSol sol) {
     fscanf(stdin,"%s",intmesh->name);
   }
   
-  if ( !sol->nameout ) {
-    sol->nameout = (char *)calloc(128,sizeof(char));
-    assert(sol->nameout);
-    strcpy(sol->nameout,extmesh->name);
-    ptr = strstr(sol->nameout,".mesh");
+  if ( !extmesh->nameout ) {
+    extmesh->nameout = (char *)calloc(128,sizeof(char));
+    assert(extmesh->nameout);
+    strcpy(extmesh->nameout,extmesh->name);
+    ptr = strstr(extmesh->nameout,".mesh");
     if ( ptr ) *ptr = '\0';
-    strcat(sol->nameout,".0.sol");
+    strcat(extmesh->nameout,".d.mesh");
   }
   
   return(1);
@@ -204,8 +216,8 @@ int main(int argc,char **argv) {
   Mesh     inmesh;
   Sol      sol;
   pBucket  bucket;
-  int      ier,count,countmax,count1,count2,count3,stop;
-  char     stim[32];
+  int      ier,count,countmax,count1,count2,count3,stop,it,ret;
+  char     stim[32],str1[20],str2[20],*ptr;
   
   fprintf(stdout,"  -- WARPING, Release %s (%s) \n",LS_VER,LS_REL);
   fprintf(stdout,"     %s\n",LS_CPY);
@@ -231,8 +243,8 @@ int main(int argc,char **argv) {
   memset(&sol,0,sizeof(Sol));
   sol.nit = LS_MAXIT;
   
-  info.imprim = 0;  
-  info.scale  = 1; // scale extmesh by default
+  info.imprim = 0;
+  info.debug  = 0;
   info.nit    = MAXIT;
   info.load   = LOAD;
   info.lambda = LS_E * LS_NU /( (1 + LS_NU)*(1-2*LS_NU));
@@ -280,9 +292,19 @@ int main(int argc,char **argv) {
   count = 1;
   count2 = 0;
   count3 = 0;
-  if( info.scale) { fprintf(stdout,"\n  -- Using default spherical template ..  \n");
+  it = 0;
+  strcpy(str1,extmesh.name);
+  ptr = strstr(str1,".mesh");
+  if (! ptr) {
+  strcpy(str2,"sphere");
+  ret = strcmp(str1, str2);
+  }
+  else { strcpy(str2,"sphere.mesh");
+    ret = strcmp(str1, str2);
+  }
+
+  if( !ret ) { fprintf(stdout,"\n  -- Using default spherical template ..  \n");
     countmax = initializationsphere(&extmesh,&intmesh);
-    if (!saveMesh(&extmesh)) return (1);
   }
   else {
     fprintf(stdout,"\n  -- Using envelope template ..  \n");
@@ -296,7 +318,14 @@ int main(int argc,char **argv) {
   }
   stop = 1;
   
-  while( count <= countmax && count3 <=info.nit ) {
+  if (info.debug) {
+    it++;
+    saveMesh(&extmesh,it);
+  }
+
+  
+//  while( count <= 0.9*countmax && count3 <=info.nit ) {
+  while( count3 <=info.nit ) {
     sol.err = LS_RES;
     if (!elasti1_3d(&extmesh,&sol) ) break;
     count1 = count;
@@ -307,10 +336,11 @@ int main(int argc,char **argv) {
     /* reset sol at 0 */
     memset(sol.u,0,sol.dim*sol.np*sizeof(double));
     count3 ++;
-    if ( info.imprim ) { fprintf(stdout,"     - count = %d, countmax = %d, count2 = %d, count3 = %d, \n",count,countmax,count2,count3);
-      if (count3%10==0) saveMesh(&extmesh);
+    if ( info.imprim )  fprintf(stdout,"     - count = %d, countmax = %d, count2 = %d, count3 = %d, \n",count,countmax,count2,count3);
+    if (info.debug) {
+    it++;
+      saveMesh(&extmesh,it);
     }
-    
   }
   chrono(OFF,&info.ctim[2]);
   printim(info.ctim[2].gdif,stim);
@@ -320,7 +350,7 @@ int main(int argc,char **argv) {
   
   /* save file */
   if ( info.imprim ) fprintf(stdout,"\n  -- WRITING DATA FILE %s\n",extmesh.name);
-  if (!saveMesh(&extmesh)) return (1);
+  if(!info.debug) if (!saveMesh(&extmesh,0)) return (1);
   chrono(ON,&info.ctim[1]);
   free(extmesh.tetra);
   free(extmesh.point);

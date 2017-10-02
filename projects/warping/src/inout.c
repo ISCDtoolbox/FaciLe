@@ -130,38 +130,51 @@ int loadMesh(pMesh mesh) {
   return(1);
 }
 
-int saveMesh(pMesh mesh) {
+int saveMesh(pMesh mesh,int n) {
   pPoint       ppt;
   pTria        pt1;
   pTetra       pt;
   int          k,inm;
-  char        *ptr,data[128];
+  char        *ptr,data[128],suff[10];
 
   mesh->ver = GmfDouble;
+  strcpy(data,mesh->nameout);
   
-  strcpy(data,mesh->name);
+  if( info.debug == 1) {
+    ptr = strstr(data,".mesh");
+    if ( !ptr ) {
+    sprintf(data, "%s.%03d",data,n);
+      strcpy(suff,".mesh");
+      strcat(data,suff);
+    }
+    else {
+      *ptr = '\0';
+      sprintf(data, "%s.%03d",data,n);
+      strcpy(suff,".mesh");
+      strcat(data,suff);
+    }
+  }
+  else {
   ptr = strstr(data,".mesh");
   if ( !ptr ) {
-    strcat(data,".d.mesh");
+    strcat(data,".mesh");
     if( !(inm = GmfOpenMesh(data, GmfWrite, mesh->ver,mesh->dim)) ) {
-      ptr  = strstr(data,".mesh");
-      *ptr = '\0';
-      strcat(data,".mesh");
-      if( !(inm = GmfOpenMesh(data, GmfWrite, mesh->ver,mesh->dim)) ) {
         fprintf(stderr,"  ** UNABLE TO OPEN %s.\n",data);
         return(0);
-      }
     }
   }
   else {
     *ptr = '\0';
-    strcat(data,".d.mesh");
+    strcat(data,".mesh");
+    }
+  }
     if( !(inm = GmfOpenMesh(data, GmfWrite, mesh->ver,mesh->dim)) ){
     fprintf(stderr,"  ** UNABLE TO OPEN %s.\n",data);
     return(0);
-  }
-  }
+   }
+  
   fprintf(stdout,"  %%%% %s OPENED\n",data);
+  
   GmfSetKwd(inm,GmfVertices,mesh->np);
       for(k=1; k<=mesh->np; k++) {
       ppt = &mesh->point[k];
