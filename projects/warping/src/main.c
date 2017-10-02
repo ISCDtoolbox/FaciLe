@@ -33,6 +33,7 @@ static void usage(char *prog) {
   fprintf(stdout,"\n** Generic options :\n");
   fprintf(stdout,"-h                Print this message \n");
   fprintf(stdout,"-p                Print execution steps  \n");
+  fprintf(stdout,"-debug            Print intermediary meshes \n");
   
   
   fprintf(stdout,"\n**  File specifications\n");
