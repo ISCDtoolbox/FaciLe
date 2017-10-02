@@ -218,7 +218,7 @@ int main(int argc,char **argv) {
   Sol      sol;
   pBucket  bucket;
   int      ier,count,countmax,count1,count2,count3,stop,it,ret;
-  char     stim[32],str1[20],str2[20],*ptr;
+  char     stim[32],str1[200],str2[200],*ptr;
   
   fprintf(stdout,"  -- WARPING, Release %s (%s) \n",LS_VER,LS_REL);
   fprintf(stdout,"     %s\n",LS_CPY);
