@@ -64,9 +64,9 @@ class Mesh:
                         break
                 return np.array(arr,dtype=dt)
             except:
-                print("Did not manage to read the array")
-                sys.exit()
-            sys.exit()
+                print("Did not manage to read the array of " + f.name)
+                return np.array([])
+            return np.array([])
     def readSol(self,path=None):
         fileName = path if path is not None else self.path[:-5]+".sol"
         if True:
@@ -349,6 +349,12 @@ class Mesh:
                     newTets[i][j] = newUsed[t]-1
             self.tets = newTets
         self.computeBBox()
+    def discardDuplicateVertices(self):
+        unique, unique_inverse = np.unique([v for v in self.verts], return_inverse=True, axis=0)
+        unique_inverse = np.reshape(unique_inverse, (len(unique_inverse)/3,3))
+        self.verts = unique
+        self.tris  = np.insert(unique_inverse, 3, self.tris[:,3], axis=1)
+        self.computeBBox()
 
     def getHull(self):
         with open("tmp.node","w") as f:
@@ -397,6 +403,13 @@ class Mesh:
         self.verts = np.dot(self.verts,mat.T)
         self.verts[:,3]=refs
         self.computeBBox()
+
+    def scaleSol(self, mini, maxi, absolute=False):
+        if absolute:
+            ABS = np.absolute(self.scalars)
+            self.scalars = mini + (maxi-mini) * (ABS - np.min(ABS)) / (np.max(ABS) - np.min(ABS))
+        else:
+            self.scalars = mini + (maxi-mini) * (self.scalars - np.min(self.scalars)) / (np.max(self.scalars) - np.min(self.scalars))
 
     # .mesh export functions
     def writeArray(self, path, head, array, form, firstOpening=False, incrementIndex=False):

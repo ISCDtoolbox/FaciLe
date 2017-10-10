@@ -216,7 +216,7 @@ if __name__=="__main__":
     newData = spaceCarve(binaryData)
     newData = nd.binary_closing(newData,structure=nd.generate_binary_structure(3, 3),iterations=3)
     print "-  2.2 - Marching cubes"
-    verts, faces = mea.marching_cubes(volume=newData, level=0.5)
+    verts, faces, _, _ = mea.marching_cubes_lewiner(volume=newData, level=0.5)
     recon = msh.Mesh()
     recon.verts = np.insert(np.array(verts),3,0,axis=1)
     recon.tris = np.insert(np.array(faces),3,0,axis=1)

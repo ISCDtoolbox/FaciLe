@@ -49,10 +49,29 @@ def command(cmd, displayOutput=False):
 def work(in_file):
     """Defines the work unit on an input file"""
     root = '.'.join(in_file.split("/")[-1].split(".")[:-1])
-    cmd = " ".join([exe.processSkull, "-i " + in_file, "-t ../OsTemplate.mesh",">",root+"_OUT.txt"])
+
+    if not os.path.exists("tmp_"+root):
+        os.mkdir("tmp_"+root)
+    os.chdir("tmp_"+root)
+    os.system("cp /home/norgeot/dev/own/FaciLe/projects/warping/demo/sphere.o1.mesh ./sphere.mesh")
+
+    cmd = " ".join([exe.processSkull, "-i " + in_file, "-t ../../OsTemplate.mesh",">",root+"_OUT.txt"])
     print "Starting the skull processing for " + in_file
-    os.system(cmd)
+    #os.system(cmd)
     print "Skull processing finished for " + in_file
+
+    #clean the working directories
+
+    for ext in [".warped.mesh", ".box.1.o.", "mat","_OUT.txt"]:
+        for f in os.listdir("."):
+            if ext in f:
+                os.rename(f, os.path.join(args.outputDir,f))
+    for f in os.listdir("."):
+        if ".mesh" in f or ".sol" in f:
+            #os.remove(f)
+            #print f + " was successfully removed"
+            a=2
+
     return 0
 
 if __name__=="__main__":
@@ -61,7 +80,7 @@ if __name__=="__main__":
     checkArgs(args)
     files = [os.path.join(args.inputDir,f) for f in os.listdir(args.inputDir) if ".mesh" in f]
 
-    os.system("cp /home/norgeot/dev/own/FaciLe/projects/warping/demo/sphere.mesh .")
+
 
     #Set up the parallel task pool to use all available processors
     count = mp.cpu_count()

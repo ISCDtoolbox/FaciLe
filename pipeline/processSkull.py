@@ -13,7 +13,6 @@ def parse():
     parser.add_argument("-i", "--input", help="input .mesh object", type=str, required=True)
     parser.add_argument("-t", "--template", help="template mandible in full size", type=str, required=True)
     return parser.parse_args()
-
 def checkArgs(args):
     if not os.path.isfile(args.input):
         print args.input + " is not a valid file"
@@ -27,7 +26,8 @@ def checkArgs(args):
     if not os.path.splitext(args.template)[1] == ".mesh":
         print args.template + " is not a .mesh file"
         sys.exit()
-
+    args.template = os.path.abspath(args.template)
+    args.input    = os.path.abspath(args.input)
 def command(cmd, displayOutput=False):
     err = 1
     print "Running the command '" + cmd + "'"
@@ -82,7 +82,7 @@ if __name__=="__main__":
 
     # 7 - Warp
     #command(exe.warping + " " + root + ".o1.mesh -t shell.mesh -p -load 50", displayOutput=True)
-    command(exe.warping + " " + root + ".o1.mesh -p -load 150", displayOutput=True)
+    command(exe.warping + " " + root + ".o1.mesh -p -load 70", displayOutput=True)
 
     # 8 - Extract the interior surface
     warped = msh.Mesh("sphere.d.mesh")
@@ -104,10 +104,6 @@ if __name__=="__main__":
     command( exe.mmg3d + " "+root+".box.1.mesh -hausd " + str(np.max(remeshed.dims)/25) + " -hmax " + str(np.max(remeshed.dims)/25))
     command( exe.mshdist + " -ncpu 4 -noscale "+root+".box.1.o.mesh " + root + ".warped.mesh")
 
-    # TO DO LAST - clean the working directories
-    for ext in [".warped.mesh", ".box.1.o*", "*mat*.txt","_OUT.txt"]:
-        os.system("mv " + root + ext + " " + args.outputDir)
-    os.system("rm " + root + "*.mesh " + root + "*.sol")
 
     # 11 - Morph the reference onto the skull and extract the surface displacement
     """
