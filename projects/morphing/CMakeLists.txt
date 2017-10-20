@@ -11,11 +11,19 @@ add_library(           libMorphing SHARED ${sources})
 set_target_properties( libMorphing PROPERTIES PREFIX "")
 
 #target_link_libraries( libMorphing Commons)
-#find_library(          Commons NAMES Commons HINTS "/usr/local/lib/iscd" required)
+#
 #find_library(          Elasticity NAMES Elasticity HINTS "/usr/local/lib/iscd" required)
 #link_directories(      "/usr/local/lib/iscd")
 #include_directories(   "/usr/local/include/iscd")
-target_link_libraries( libMorphing Commons)
+if(${Commons})
+  message("toto")
+  target_link_libraries( libMorphing Commons)
+else()
+  find_library(          Commons NAMES Commons HINTS $ENV{HOME} required)
+  target_link_libraries( libMorphing Commons)
+endif()
+
+
 
 #project(morphing)
 #file(                  GLOB_RECURSE sources src/main.c)

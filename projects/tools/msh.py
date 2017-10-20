@@ -453,7 +453,7 @@ class Mesh:
                 f.write( "v %.8f %.8f %.8f\n" % (v[0], v[1], v[2]) )
             f.write("\n")
             for t in self.tris:
-                f.write( "f %i %i %i\n" % (t[0], t[1], t[2]) )
+                f.write( "f %i %i %i\n" % (t[0]+1, t[1]+1, t[2]+1) )
             f.write("\n")
     def writeSTL(self, path):
         with open(path, "w") as f:

@@ -13,6 +13,11 @@ import multiprocessing as mp
 sys.path.append(os.path.join(os.path.dirname(__file__),"../projects/tools"))
 import msh
 import executable_paths as exe
+import tempfile
+from functools import wraps
+import string
+import random
+from scipy.spatial.distance import cdist
 
 #Functions to group files by name
 def condition1(ref, tmp):
@@ -109,69 +114,126 @@ def cutMeshInHalf(mesh):
     half1.applyMatrix(half1.toUnitMatrix())
     half2.applyMatrix(half2.toUnitMatrix())
     return half1, half2
+def nearest_neighbor(src, dst):
+    all_dists = cdist(src, dst, 'euclidean')
+    indices = all_dists.argmin(axis=1)
+    distances = all_dists[np.arange(all_dists.shape[0]), indices]
+    return distances, indices
+def adapt_box_to(f, maxNb=20000):
+    shutil.copyfile("/home/norgeot/box.mesh","box.mesh")
+    cube = msh.Mesh("box.mesh")
+    mesh = msh.Mesh(f)
+    step = 1 if len(mesh.verts)<maxNb else int(len(mesh.verts)/maxNumPoints)+1
+    dists, _ = nearest_neighbor(cube.verts[:,:3], mesh.verts[::step,:3])
+    cube.scalars = np.array(dists)
+    cube.scaleSol(0.002, 1, absolute=True)
+    cube.write("box.1.mesh")
+    cube.writeSol("box.1.sol")
+    err = os.system("mmg3d_O3 box.1.mesh -hgrad 1.5  > /dev/null 2>&1")
+    if err:
+        raise FacileError("mmg3d failure")
 
-#Functions to run in parallel on all files
-dryRun = False
-def run(func, liste, parallel=True):
-    if not dryRun:
-        if parallel:
-            pool = mp.Pool(processes= min(len(liste), mp.cpu_count()-1 ) )
-            return pool.map(func, liste )
-        else:
+#Decorator
+class FacileError(Exception):
+    pass
+def debug():
+    def true_decorator(f):
+        @wraps(f)
+        def wrapped(*args, **kwargs):
+            r=None
+            print f.__name__ + " : "+'\033[94m'+"RUNNING"+'\033[0m'+" on " + str(*args)
+            try:
+                tmpdir = ''.join([random.choice(string.ascii_letters + string.digits) for n in xrange(8)])
+                try:
+                    os.makedirs(tmpdir)
+                except:
+                    print "ERROR generating temporary directory"
+                    return None
+                os.chdir(tmpdir)
+                r = f(*args, **kwargs)
+            except Exception as e:
+                print f.__name__ + " : "+'\033[91m'+"FAILURE"+'\033[0m'+" on " + str(*args) + ": " + type(e).__name__ + ": " + str(e)
+                pass
+            else:
+                print f.__name__ + " : "+'\033[92m'+"SUCCESS"+'\033[0m'+" on " + str(*args)
+            finally:
+                os.chdir("..")
+                shutil.rmtree(tmpdir)
+                return r
+        return wrapped
+    return true_decorator
+dryRun  = False # Run just for fun
+oneStep = False # If only wish to process one step
+def run(func, liste, parallel=True, maxi=64):
+    if len(liste)>0:
+        num = min( maxi, min(len(liste), mp.cpu_count()-1 )) if parallel else 1
+        print '\033[95m' + "## EXECUTING '" + func.__name__ + "' on " + str(len(liste)) + " cases on " + str(num) + " process(es)." + '\033[0m'
+        if not dryRun:
             res = []
-            for l in liste:
-                res.append(func(l))
+            if parallel:
+                pool = mp.Pool(processes=num)
+                res = pool.map(func, liste )
+            else:
+                res = []
+                for l in liste:
+                    res.append(func(l))
+            if oneStep:
+                print '\033[95m' + "ONESTEP -> EXITING..." + '\033[0m'
+                sys.exit()
             return res
+        else:
+            return 0
     else:
-        return 0
-def copy(f):
+        print '\033[95m' + "## 0 arguments to execute '" + func.__name__ + "' on, skipping..." + '\033[0m'
+
+#Functions
+@debug()
+def ftpCopy(f):
     ftp = FTP(IPadress, ftpUsr, ftpPwd)
     ftp.cwd(ftpDir)
     num = f.split(".")[1].zfill(3)
-    localFile = os.path.join(outFolder, num + "_" + newName(f) + "." + f.split(".")[-1])
-    if not num + "_" + newName(f) + ".mesh" in "".join(os.listdir(outFolder)):
+    localFile = os.path.join(rawFolder, num + "_" + newName(f) + "." + f.split(".")[-1])
+    if not num + "_" + newName(f) + ".mesh" in "".join(os.listdir(rawFolder)):
         if not os.path.isfile(localFile):
-            print "Copying from ftp to " + localFile
             with open(localFile, 'wb') as ff:
                 ftp.retrbinary('RETR %s' % f, ff.write)
+@debug()
 def convertToMesh(f):
     if "stl" in f:
-        print "Converting " + f + " to .mesh"
         if not stlToMesh(f):
-            print "-> Error converting " + f + " to .mesh"
+            raise FacileError("conversion failure")
+@debug()
 def cleanMesh(f):
-    print "Analysing " + f
     mesh = msh.Mesh()
     mesh.get_infos(f)
     nV = mesh.numItems[0]
     nT = mesh.numItems[1]
     if nV>nT:
-        print "Cleaning " + f
         mesh = msh.Mesh(f)
         mesh.discardDuplicateVertices()
         mesh.discardUnused()
         mesh.write(f)
-        print "Done cleaning " + f
+@debug()
 def process(g):
     newBone = os.path.join(remeshedFolder, g[0][:3] + "_bone.mesh")
     newFace = os.path.join(remeshedFolder, g[0][:3] + "_face.mesh")
     newMass = os.path.join(remeshedFolder, g[0][:3] + "_mass.mesh")
-    print "Processing group " + str(g)
+
     faceFile = [f for f in g if "face" in f][0]
-    face = msh.Mesh(os.path.join(outFolder, faceFile))
+    face = msh.Mesh(os.path.join(rawFolder, faceFile))
     boneFiles = [f for f in g if f!=faceFile and "mass" not in f]
     bone   = None
     center = [0,0,0]
-    bone = msh.Mesh(os.path.join(outFolder,boneFiles[0]))
+    bone = msh.Mesh(os.path.join(rawFolder,boneFiles[0]))
     if len(boneFiles)>1:
         for f in boneFiles[1:]:
-            bone.fondre(msh.Mesh(os.path.join(outFolder,f)))
+            bone.fondre(msh.Mesh(os.path.join(rawFolder,f)))
     center   = bone.center
     scale    = 0.0035
     meshes = [face, bone]
     mass = None
     if "mass" in "".join(g):
-        mass = msh.Mesh(os.path.join(outFolder, [f for f in g if "mass" in f][0]))
+        mass = msh.Mesh(os.path.join(rawFolder, [f for f in g if "mass" in f][0]))
         meshes.append(mass)
     for mesh in meshes:
         mesh.verts[:,:3] -= center
@@ -182,77 +244,56 @@ def process(g):
     face.write(newFace)
     if mass is not None:
         mass.write(newMass)
+@debug()
 def remesh(f, hausd=0.005):
-    if not os.path.isfile(f[:-5] + ".o.mesh"):
-        print "Remeshing " + f
-        err = os.system(exe.mmgs + " " + f + " -nr -nreg -hausd " + str(hausd) + " -o " + f[:-5] + ".o.mesh > " + f[:-5] + ".remesh.txt 2>&1")
-        if err:
-            print "Error while remeshing " + f + ", look in " + f[:-5] + ".remesh.txt"
-            return 1
-        else:
-            os.remove(f[:-5] + ".remesh.txt")
-            print "Successfully remeshed " + f
-            return 0
-    return 1
+    err = os.system(exe.mmgs + " " + f + " -nr -nreg -hausd " + str(hausd) + " -o " + f[:-5] + ".o.mesh > /dev/null 2>&1")
+    if err:
+        raise FacileError("mmgs failure")
+    return 0
+@debug()
 def align(g):
     boneFile = [f for f in g if "bone" in f][0]
     faceFile = [f for f in g if "face" in f][0]
     massFile = [f for f in g if "mass" in f][0] if "mass" in "".join(g) else ""
     num = boneFile.split("/")[-1][:3]
-    name = "".join(f.split("/")[-1].split(".")[:-1])
-    try:
-        os.makedirs(name)
-    except:
-        pass
-    os.chdir(name)
 
-    print "Aligning " + boneFile
     err = os.system(exe.align + " -i " + boneFile + " " + boneTemplate + " -d 0.1 -o 0.95  > "+num+".txt")#/dev/null 2>&1")
     if err:
-        print "-- Error aligning " + boneFile
+        raise FacileError("alignement failure")
+
+    bone = msh.Mesh(boneFile)
+    bone.applyMatrix(matFile = "mat_Super4PCS.txt")
+    bone.applyMatrix(matFile = "mat_ICP.txt")
+    bone.write(os.path.join(alignedFolder, num+"_bone.aligned.mesh"))
+
+    err = os.system(exe.pythonICP + " -s " + os.path.join(alignedFolder, num+"_bone.aligned.mesh") + " -t " + boneTemplate + " -m mat_pyICP.txt >> " + num + ".txt")
+    if err:
+        pass # Cannot run python alignement...
     else:
-        bone = msh.Mesh(boneFile)
-        bone.applyMatrix(matFile = "mat_Super4PCS.txt")
-        bone.applyMatrix(matFile = "mat_ICP.txt")
-        bone.write(boneFile[:-5]+".aligned.mesh")
-        print num + " bone written"
+        bone.applyMatrix(matFile = "mat_pyICP.txt")
+        bone.write(os.path.join(alignedFolder, num+"_bone.aligned.mesh"))
 
-        err = os.system(exe.pythonICP + " -s " + boneFile[:-5]+".aligned.mesh" + " -t " + boneTemplate + " -m mat_pyICP.txt >> " + num + ".txt")
-        if err:
-            print "-- Error with ICP for " + boneFile
-        else:
-            bone.applyMatrix(matFile = "mat_pyICP.txt")
-            bone.write(boneFile[:-5]+".final.mesh")
-            print num + " final bone written"
-
-        face = msh.Mesh(faceFile)
-        face.applyMatrix(matFile = "mat_Super4PCS.txt")
-        face.applyMatrix(matFile = "mat_ICP.txt")
+    face = msh.Mesh(faceFile)
+    face.applyMatrix(matFile = "mat_Super4PCS.txt")
+    face.applyMatrix(matFile = "mat_ICP.txt")
+    if not err:
         face.applyMatrix(matFile = "mat_pyICP.txt")
-        face.write(faceFile[:-5]+".final.mesh")
-        print num + " final face written"
-
-        if ".mesh" in massFile:
-            mass = msh.Mesh(massFile)
-            mass.applyMatrix(matFile = "mat_Super4PCS.txt")
-            mass.applyMatrix(matFile = "mat_ICP.txt")
+    face.write(os.path.join(alignedFolder, num+"_face.aligned.mesh"))
+    if ".mesh" in massFile:
+        mass = msh.Mesh(massFile)
+        mass.applyMatrix(matFile = "mat_Super4PCS.txt")
+        mass.applyMatrix(matFile = "mat_ICP.txt")
+        if not err:
             mass.applyMatrix(matFile = "mat_pyICP.txt")
-            mass.write(massFile[:-5]+".final.mesh")
-            print num + " final mass written"
-
-    os.chdir("..")
+        mass.write(os.path.join(alignedFolder, num+"_mass.aligned.mesh"))
     return 0
+@debug()
 def warp(f):
     num = f.split("/")[-1][:3]
-    name = "".join(f.split("/")[-1].split(".")[:-1])
-    if not os.path.exists(name):
-        os.makedirs(name)
-    os.chdir(name)
+
     os.system("cp " + templateSphere + " ./sphere.mesh")
-    print "Warping " + f
-    err = os.system( exe.warping + " " + f + " -p -load 70 > warping.txt" )
+    err = os.system( exe.warping + " " + f + " -p -load 40 > warping.txt" )
     if err:
-        print "-- Error while wrapping " + f + ", trying to remove elements"
         try:
             mesh = msh.Mesh(f)
             mesh.tris = np.array([ t for t in mesh.tris if np.max(t)<=len(mesh.verts) ])
@@ -260,61 +301,42 @@ def warp(f):
             mesh.write(f)
             err = os.system( exe.warping + " " + f + " -p -load 70 > warping.txt" )
             if err:
-                os.chdir("..")
-                return 1
+                raise FacileError("cleaned warping failure")
         except:
-            print "Problem not solved"
-            os.chdir("..")
-            return 1
+            raise FacileError("warping failure")
 
     warped = msh.Mesh("sphere.d.mesh")
     ext_ref = 2
     warped.tris = warped.tris[warped.tris[:,-1] != ext_ref]
     warped.tets = np.array([])
     warped.discardUnused()
-    warped.write(".".join(f.split(".")[:-1]) + ".warped.mesh")
-    print "Successfully warped " + f
-
-    os.chdir("..")
+    warped.write(os.path.join(warpedFolder,f.split("/")[-1].split(".")[0] + ".warped.mesh"))
     return 0
+@debug()
 def signedDistance(f):
-    print "Computing the signed distance for " + f
-    num = f.split("/")[-1][:3]
-    name = "".join(f.split("/")[-1].split(".")[:-1])
-    if not os.path.exists(name):
-        os.makedirs(name)
-    os.chdir(name)
+    adapt = True
+    if adapt:
+        adapt_box_to(f)
+    else:
+        cube=msh.Mesh(cube=[0,1,0,1,0,1])
+        cube.write("box.mesh")
+        err = os.system( exe.tetgen + " -pgANEF box.mesh > /dev/null 2>&1")
+        if err:
+            raise FacileError('tetgen failure')
+        err = os.system( exe.mmg3d + " box.1.mesh -hausd 0.04 -hmax 0.04 > /dev/null 2>&1" )
+        if err:
+            raise FacileError('mmg3d failure')
 
-    cube=msh.Mesh(cube=[0,1,0,1,0,1])
-    cube.write("box.mesh")
-
-    err = os.system( exe.tetgen + " -pgANEF box.mesh > error.txt")
+    err = os.system( exe.mshdist + " -ncpu 16 -noscale box.1.o.mesh " + f + " > /dev/null 2>&1")
     if err:
-        print "Error with tetgen on " + f
-        os.chdir("..")
-        return 1
-    err = os.system( exe.mmg3d + " box.1.mesh -hausd 0.04 -hmax 0.04 >> error.txt" )
-    if err:
-        print "Error with mmg3d on " + f
-        os.chdir("..")
-        return 1
-    err = os.system( exe.mshdist + " -ncpu 1 -noscale box.1.o.mesh " + f + " >> error.txt")
-    if err:
-        print "Error with mshdist on " + f
-        os.chdir("..")
-        return 1
-
-    os.system("mv box.1.o.mesh " + ".".join(f.split(".")[:-2]) + ".signed.mesh")
-    os.system("mv box.1.o.sol  " + ".".join(f.split(".")[:-2]) + ".signed.sol")
-
-    print "Successfully computed the signed distance for " + f
-
-    os.chdir("..")
-    shutil.rmtree(name)
+        raise FacileError('mshdist failure')
+    name = f.split("/")[-1].split(".")[0]
+    os.system("mv box.1.o.mesh " + os.path.join(signedFolder, name + ".signed.mesh"))
+    os.system("mv box.1.o.sol  " + os.path.join(signedFolder, name + ".signed.sol"))
     return 0
+@debug()
 def cut(f):
-    print "Cutting " + f
-    mesh=msh.Mesh(os.path.join(outFolder, f))
+    mesh=msh.Mesh(os.path.join(rawFolder, f))
     MAT = mesh.toUnitMatrix()
     mesh.applyMatrix(MAT)
     newF = os.path.join(musclesFolder, f[:-5] + ".scaled.mesh")
@@ -327,92 +349,124 @@ def cut(f):
     os.remove(os.path.join(musclesFolder, f[:-5] + ".scaled.mesh"))
     os.remove(os.path.join(musclesFolder, f[:-5] + ".scaled.o.mesh"))
     os.remove(os.path.join(musclesFolder, f[:-5] + ".scaled.o.sol"))
-    print "Successfully cut " + f
+
 def alignToTemplate(f):
     num = f.split("/")[-1][:3]
-    try:
-        os.makedirs(num+"align")
-    except:
-        pass
-    os.chdir(num+"align")
-
-    print "Aligning " + f
     err=0
     """
     if "mass" in f:
         err = os.system(exe.align + " -i " + f + " " + massTemplate + " -d 0.1 -o 0.95  > "+num+"_mass.txt")#/dev/null 2>&1")
     elif "mand" in f:
         err = os.system(exe.align + " -i " + f + " " + mandTemplate + " -d 0.1 -o 0.95  > "+num+"_mand.txt")#/dev/null 2>&1")
-
     if err:
         print "-- Error aligning " + boneFile
     """
-    if 0:
-        pass
+    mesh = msh.Mesh(f)
+    #mesh.applyMatrix(matFile = "mat_Super4PCS.txt")
+    #mesh.applyMatrix(matFile = "mat_ICP.txt")
+    #mesh.write(f[:-5]+".aligned.mesh")
+    todo = f#f[:-5]+".aligned.mesh"
+    if "mass" in f:
+        err = os.system(exe.pythonICP + " -s " + todo + " -t " + massTemplate + " -m mat_pyICP.txt >> " + num + "_mass.txt")
+    elif "mand" in f:
+        err = os.system(exe.pythonICP + " -s " + todo + " -t " + mandTemplate + " -m mat_pyICP.txt >> " + num + "_mand.txt")
+    if err:
+        print "-- Error with ICP for " + f
     else:
-        mesh = msh.Mesh(f)
-        #mesh.applyMatrix(matFile = "mat_Super4PCS.txt")
-        #mesh.applyMatrix(matFile = "mat_ICP.txt")
-        #mesh.write(f[:-5]+".aligned.mesh")
-        todo = f#f[:-5]+".aligned.mesh"
-        if "mass" in f:
-            err = os.system(exe.pythonICP + " -s " + todo + " -t " + massTemplate + " -m mat_pyICP.txt >> " + num + "_mass.txt")
-        elif "mand" in f:
-            err = os.system(exe.pythonICP + " -s " + todo + " -t " + mandTemplate + " -m mat_pyICP.txt >> " + num + "_mand.txt")
-        if err:
-            print "-- Error with ICP for " + f
-        else:
-            mesh.applyMatrix(matFile = "mat_pyICP.txt")
-            mesh.write(f)
-            print "Successfully aligned " + f
-
-    os.chdir("..")
+        mesh.applyMatrix(matFile = "mat_pyICP.txt")
+        mesh.write(f)
+        print "Successfully aligned " + f
     return 0
+
+@debug()
 def warpWithBlender(f,resolution=41):
-    print "Warping "+f+" via blender"
-    err1 = os.system( exe.boundingMesh + " -i " + f + " -o " + f[:-5]+".carved.mesh -r " + str(resolution) + " > /dev/null 2>&1")
-    err2 = os.system("blender --background --python blender_warp.py -- " + f[:-5]+".carved.mesh " + f + " " + f[:-5] + ".warped.mesh > /dev/null 2>&1")
-    err3 = os.system(exe.mmgs + " " + f[:-5] + ".warped.mesh -o " + f[:-5] + ".warped.mesh -hausd 0.002 > /dev/null 2>&1")
+    err1 = os.system( exe.boundingMesh + " -i " + f + " -o carved.mesh -r " + str(resolution) + " > /dev/null 2>&1")
+    err2 = os.system("blender --background --python blender_warp.py -- carved.mesh " + f + " warped.mesh > /dev/null 2>&1")
+    err3 = os.system(exe.mmgs + " warped.mesh -o warped.o.mesh -hausd 0.002 > /dev/null 2>&1")
     if (err1+err2+err3):
-        print "Did not manage to warp "+f+" with blender "
+        raise FacileError("blender warping failure")
+    shutil.copyfile("warped.o.mesh", f[:-5]+".rewarped.mesh")
+
+def cleanWithMeshlab(f, new=None):
+    mesh = msh.Mesh(f)
+    mesh.writeOBJ("tmp.obj")
+    err = os.system("LC_ALL=C meshlabserver -i tmp.obj -o cleaned.obj -s " + intScript + " > /dev/null 2>&1" )
+    if err:
+        raise FacileError("meshlab failure")
+    mesh = obj2Mesh("cleaned.obj")
+    if new is not None:
+        mesh.write(new)
     else:
-        os.remove(f[:-5]+".carved.mesh")
-        os.remove(f[:-5]+".warped.sol")
+        mesh.write(f)
+@debug()
+def intersects(f):
+    os.system(exe.tetgen + " -d " + f + " > log.txt")
+    with open("log.txt","r") as f:
+        if "No faces are intersecting" in "".join(f.readlines()):
+            return False
+        else:
+            return True
+@debug()
 def generateMask(f):
     num = f[0].split("/")[-1][:3]
-    try:
-        os.makedirs(num+"mask")
-    except:
-        pass
-    os.chdir(num+"mask")
 
-    try:
+    bone, face = None, None
+
+    if intersects(f[0]):
+        cleanWithMeshlab(f[0],new="bone.mesh")
+        if intersects("bone.mesh"):
+            raise FacileError("Bone intersect")
+        bone = msh.Mesh("bone.mesh")
+    else:
         bone = msh.Mesh(f[0])
-        bone.verts[:,3] = 1
-        bone.fondre(msh.Mesh(f[1]))
-        bone.write("toto.mesh")
-        err = os.system(exe.tetgen + " -pgaq1.2ANEF toto.mesh  > /dev/null 2>&1")
-        if err:
-            print "Error with tetgen on case " + num
-            try:
-                bone.writeOBJ("toto.obj")
 
-        mesh = msh.Mesh("toto.1.mesh")
-        ext_point_ind = mesh.tris[mesh.tris[:,-1]==0][0][0]
-        ext_ref=None
-        for t in mesh.tets:
-            if ext_point_ind in t:
-                ext_ref = t[-1]
-        mesh.tris = mesh.tris[mesh.tris[:,-1]>0]
-        mesh.tets = mesh.tets[mesh.tets[:,-1]==ext_ref]
-        mesh.discardUnused()
-        mesh.write(os.path.join(os.path.dirname(f[0]), num+".mask.mesh"))
-        os.chdir("..")
-    except:
-        print "Error while generating mask for case " + num
-        os.chdir("..")
-    shutil.rmtree(num+"mask")
+    if intersects(f[1]):
+        cleanWithMeshlab(f[1],new="face.mesh")
+        if intersects("face.mesh"):
+            raise FacileError("Face intersect")
+        face = msh.Mesh("face.mesh")
+    else:
+        face = msh.Mesh(f[1])
 
+    bone.tris[:,3] = 1
+    face.tris[:,3] = 2
+    face.discardUnused()
+    bone.fondre(face)
+    bone.write("mask.mesh")
+
+    if intersects("mask.mesh"):
+        cleanWithMeshlab("mask.mesh")
+        if intersects("mask.mesh"):
+            raise FacileError('Bone and Face intersect')
+
+    err = os.system(exe.tetgen + " -pgaAYNEF mask.mesh > /dev/null 2>&1")
+    if err:
+        raise FacileError("tetgen error")
+
+    mesh = msh.Mesh("mask.1.mesh")
+
+    #Exterior point = closest to [0,0,0]
+    ext_point_ind = np.argmin([np.linalg.norm(x) for x in mesh.verts[:,:3]])
+    ext_ref=None
+    for t in mesh.tets:
+        if ext_point_ind in t[:4]:
+            ext_ref = t[-1]
+            break
+    mesh.tets = mesh.tets[mesh.tets[:,-1]==ext_ref]
+    mesh.tets[:,4] = 2
+
+    for t in mesh.tris:
+        if ext_point_ind in t[:3]:
+            ext_ref = t[-1]
+            break
+    mesh.tris = mesh.tris[mesh.tris[:,3]>0]
+    M = mesh.tris[:,-1]==ext_ref
+    mesh.tris[M==1][:,3] = 1
+    mesh.tris[M==0][:,3] = 0
+
+    mesh.discardUnused()
+
+    mesh.write(os.path.join(maskedFolder, num + "_mask.mesh"))
 
 if __name__=="__main__":
 
@@ -423,119 +477,133 @@ if __name__=="__main__":
     mandTemplate   = "/home/norgeot/dev/own/FaciLe/MandTemplate.mesh"
     templateSphere = "/home/norgeot/dev/own/FaciLe/projects/warping/demo/sphere.o1.mesh"
     mshScript      = "/home/norgeot/dev/own/FaciLe/pipeline/cleanSTL.mlx"
+    intScript      = "/home/norgeot/dev/own/FaciLe/pipeline/cleanIntersections.mlx"
 
     #Output folders
-    outFolder      = "/Data/Facile2"
-    remeshedFolder = os.path.join(outFolder,"remeshed")
+    outFolder      = "/Data/Facile3"
+    rawFolder      = os.path.join(outFolder, "raw")
+    remeshedFolder = os.path.join(outFolder, "remeshed")
+    alignedFolder  = os.path.join(outFolder, "aligned")
+    warpedFolder   = os.path.join(outFolder, "warped")
+    signedFolder   = os.path.join(outFolder, "signed")
+    maskedFolder   = os.path.join(outFolder, "masked")
+    morphedFolder  = os.path.join(outFolder, "morphed")
     musclesFolder  = os.path.join(outFolder, "muscles")
-    if not os.path.exists(outFolder):
-        os.makedirs(outFolder)
+    if not os.path.exists(rawFolder):
+        os.makedirs(rawFolder)
     if not os.path.exists(remeshedFolder):
         os.makedirs(remeshedFolder)
     if not os.path.exists(musclesFolder):
         os.makedirs(musclesFolder)
+    if not os.path.exists(alignedFolder):
+        os.makedirs(alignedFolder)
+    if not os.path.exists(warpedFolder):
+        os.makedirs(warpedFolder)
+    if not os.path.exists(signedFolder):
+        os.makedirs(signedFolder)
+    if not os.path.exists(maskedFolder):
+        os.makedirs(maskedFolder)
+    if not os.path.exists(morphedFolder):
+        os.makedirs(morphedFolder)
 
     #FTP info
-    ftpUsr   = raw_input("Enter your ftp username:")
-    ftpPwd   = getpass.getpass()
+    ftpUsr   = "lnorgeot"#raw_input("Enter your ftp username:")
+    ftpPwd   = "Lolopolo29**"#getpass.getpass()
     IPadress = "134.157.66.224"
     ftpDir   = "Projets/FaciLe/Data/AllDataRaw"
 
-    #Get the files present on the FTP directory if they do not exist yet
+    # 1 - Copy from ftp to rawFolder
     ftp = FTP(IPadress, ftpUsr, ftpPwd)
     ftp.cwd(ftpDir)
-    files = [ f for f in ftp.nlst() if ".mesh" in f or ".stl" in f ]
-    files = [ f for f in files if not os.path.exists(os.path.join(outFolder,f.split(".")[1].zfill(3) + "_" + newName(f) + ".mesh")) ]
-    files.sort(key=lambda f: int(f.split(".")[1]))
-    print str(len(files)) + " files to copy from " + IPadress + ":" + ftpDir
-    if len(files)>0:
-        run(copy,files)
+    f_ftp = [ f for f in ftp.nlst() if ".mesh" in f or ".stl" in f ]
+    f_ftp = [ f for f in f_ftp if not os.path.exists(os.path.join(rawFolder,f.split(".")[1].zfill(3) + "_" + newName(f) + ".mesh")) ]
+    f_ftp.sort(key=lambda f: int(f.split(".")[1]))
+    run(ftpCopy, f_ftp)
 
-    #Convert the files to a .mesh format
-    files = [os.path.join(outFolder, f) for f in os.listdir(outFolder) if ".stl" in f]
+    # 2 - Convert from .stl to .mesh in rawFolder
+    files = [os.path.join(rawFolder, f) for f in os.listdir(rawFolder) if ".stl" in f]
     files.sort()
-    print str(len(files)) + " files to convert from .stl to .mesh"
-    if len(files)>0:
-        run(convertToMesh, files)
+    run(convertToMesh, files)
 
-    #Remove duplicates and discard unused from mesh files
-    if len(files)>0:
-        files = [os.path.join(outFolder, f) for f in os.listdir(outFolder) if ".mesh" in f]
-        files.sort()
-        print str(len(files)) + " files to clean"
-        if len(files)>0:
-            run(cleanMesh, files)
+    # 3 - Clean the meshes in rawFolder
+    files = [os.path.join(rawFolder, f) for f in os.listdir(rawFolder) if ".mesh" in f] if len(files) else []
+    files.sort()
+    run(cleanMesh, files)
 
-    #Files to rescale and merge together for the bone structure
-    files = [f for f in os.listdir(outFolder) if ".mesh" in f]
+    # 4 - Scale files and merge the bones to remeshedFolder
+    files = [f for f in os.listdir(rawFolder) if ".mesh" in f]
     files = [f for f in files if "015" not in f]
     files.sort()
     groups = group(files, condition2)
     groups = [g for g in groups if not os.path.exists(os.path.join(remeshedFolder, g[0][:3] +"_bone.mesh")) ]
-    print str(len(groups)) + " groups to scale and merge"
-    if len(groups)>0:
-        run(process, groups)
+    run(process, groups)
 
-    #Files to remesh
+    # 5 - Remesh the files
     files = [ os.path.join(remeshedFolder, f) for f in os.listdir(remeshedFolder) if len(f.split("."))==2 and ".mesh" in f ]
     files = [ f for f in files if not os.path.exists(f[:-5]+".o.mesh") ]
     good = readCSV(csvFile)
     good[67]   = 0
     files = [f for f in files if good[int(f.split("/")[-1][:3])-1]]
     files.sort()
-    print str(len(files)) + " files to remesh"
-    if len(files)>0:
-        run(remesh, files)
+    run(remesh, files)
 
-    #Files to align
-    files = [ f for f in os.listdir(remeshedFolder) if ".o.mesh" in f and not os.path.exists(os.path.join(remeshedFolder,f.split(".")[0] + ".o.final.mesh")) ]
+    # 6 - Align files
+    files = [ f for f in os.listdir(remeshedFolder) if ".o.mesh" in f and not os.path.exists(os.path.join(alignedFolder,f.split(".")[0] + ".aligned.mesh")) ]
     files.sort()
-    groups = [ [ os.path.join(remeshedFolder, f) for f in files if int(f[:3])==i ] for i in range(100) ]
+    groups = [ [ os.path.join(remeshedFolder, f) for f in files if int(f[:3])==i ] for i in range(500) ]
     groups = [g for g in groups if len(g)]
-    print str(len(groups)) + " groups to align"
-    if len(groups)>0:
-        run(align, groups)
+    run(align, groups)
 
-    #Files to warp
-    files = [ os.path.join(remeshedFolder,f) for f in os.listdir(remeshedFolder) if "bone.o.final.mesh" in f ]
-    files = [ f for f in files if f.split("/")[-1].split(".")[0] + ".warped.mesh" not in os.listdir(remeshedFolder) ]
+    # 7 - Warp the bones
+    files = [ os.path.join(alignedFolder,f) for f in os.listdir(alignedFolder) if "bone.aligned.mesh" in f ]
+    files = [ f for f in files if f.split("/")[-1].split(".")[0] + ".warped.mesh" not in os.listdir(warpedFolder) ]
     files.sort()
-    print str(len(files)) + " files to warp"
-    if len(files)>0:
-        run(warp, files)
+    run(warp, files)
 
-    #Files to compute the signedDistance
-    files = [ os.path.join(remeshedFolder,f) for f in os.listdir(remeshedFolder) if "bone.warped.mesh" in f ]
-    files = [ f for f in files if f.split("/")[-1][:3] + "_bone.signed.mesh" not in os.listdir(remeshedFolder) ]
+    # 8 - Compute the signed distance on bones
+    files = [ os.path.join(warpedFolder,f) for f in os.listdir(warpedFolder) if "bone.warped.mesh" in f ]
+    files = [ f for f in files if f.split("/")[-1][:3] + "_bone.signed.mesh" not in os.listdir(signedFolder) ]
     files.sort()
-    print str(len(files)) + " files to compute the signed distance on"
-    if len(files)>0:
-        run(signedDistance, files)
+    run(signedDistance, files, maxi=4)
 
-    #Generate the masks
-    faces = [ os.path.join(remeshedFolder,f) for f in os.listdir(remeshedFolder) if "face.o.final.mesh" in f]
-    bones = [ os.path.join(remeshedFolder,f) for f in os.listdir(remeshedFolder) if "bone.warped.mesh"  in f]
+    # 9 - Compute the signed distance on faces
+    """
+    files = [ os.path.join(alignedFolder,f) for f in os.listdir(alignedFolder) if "face.aligned.mesh" in f ]
+    files = [ f for f in files if f.split("/")[-1][:3] + "_face.signed.mesh" not in os.listdir(signedFolder) ]
+    files.sort()
+    run(signedDistance, files, maxi=4)
+    """
+
+    # 10 - Generate the masks
+    faces = [ os.path.join(alignedFolder,f) for f in os.listdir(alignedFolder) if "face.aligned.mesh" in f]
+    bones = [ os.path.join(warpedFolder,f) for f in os.listdir(warpedFolder) if "bone.warped.mesh"  in f]
     faces.sort()
     bones.sort()
     files = [[b,f] for b,f in zip(bones, faces)]
     files.sort()
-    print str(len(files)) + " files to generate a mask from"
-    if len(files)>0:
-        run(generateMask, files)
+    run(generateMask, files)
+
+    """
+    f = "/Data/Facile3/raw/045_face.mesh"
+    err1 = os.system( exe.boundingMesh + " -i " + f + " -o carved.mesh -r 51")
+    err2 = os.system("blender --background --python blender_warp.py -- carved.mesh " + f + " warped.mesh")
+    err3 = os.system(exe.mmgs + " -nr -nreg warped.mesh -o warped.o.mesh -hausd 0.002")
+    newFaces = [ os.path.join(remeshedFolder,f) for f in os.listdir(remeshedFolder) if "face.o.final.rewarped.mesh" in f]
+    for f in newFaces:
+        print f
+    """
+
 
 
     """
     #MASSETERS AND MANDIBULES
-    massFiles = [f for f in os.listdir(outFolder) if "mass.mesh" in f]
-    mandFiles = [f for f in os.listdir(outFolder) if "mand.mesh" in f]
+    massFiles = [f for f in os.listdir(rawFolder) if "mass.mesh" in f]
+    mandFiles = [f for f in os.listdir(rawFolder) if "mand.mesh" in f]
     massFiles.sort()
     mandFiles.sort()
     files = massFiles + mandFiles
     files = [f for f in files if not f[:-5] + ".R.mesh" in "".join(os.listdir(musclesFolder))]
-    #Processing the masseters and mandibules
-    print str(len(files)) + " files to cut in half"
-    if len(files)>0:
-        run(cut, files)
+    run(cut, files)
 
     align=False
     liste = os.listdir(musclesFolder)
@@ -551,15 +619,11 @@ if __name__=="__main__":
             run(warpWithBlender, files)
 
     files = [os.path.join(musclesFolder,f) for f in os.listdir(musclesFolder) if ".warped" in f]
-    print str(len(files)) + " warped objects to compute the signed distance on"
-    if len(files)>0:
-        run(signedDistance, files)
-
+    run(signedDistance, files)
 
     #liste = os.listdir(musclesFolder)
     #files = [os.path.join(musclesFolder,f) for f in liste if (".R.final.mesh" in f or ".L.final.mesh" in f) and f[:-5] + ".final.o.mesh" not in "".join(liste)]
     #print str(len(files)) + " halved files to remesh"
     #if len(files)>0:
     #    run(remesh,files)
-
     """
