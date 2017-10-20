@@ -6,28 +6,28 @@ http://www.sciencedirect.com/science/article/pii/S1631073X16300802.
 ### Installation
  
 You can grab the sources by cloning this repository or downloading a .zip archive of the sources. In order to build the project, navigate to the created directory and in a command prompt type:
-
+```
 mkdir build
-
 cd build
-
 cmake ..
-
 make
-
 (sudo) make install
-
+```
 
 ### Usage
 
 In a terminal, run:
 
-usage: morphing [-h] [-nit n] [-dref nref [refs]] [-bref nref [refs]] [-elref nref [refs]] target_file[.mesh] template_file[.mesh]  
+```
+morphing [-h] [-nit n] [-dref nref [refs]] [-bref nref [refs]] [-elref nref [refs]] target_file[.mesh] template_file[.mesh]  
+```
 
 Together with the target_file[.mesh] a scalar field target_file.sol should be provided. 
 
 Please run:
-morphing [-h] 
+```
+morphing -h
+```
 to see the default parameters. 
 
 
@@ -38,7 +38,7 @@ Contributors to this project are warmly welcomed.
 
 ### License
 
-morphing is given under the [terms of the GNU Lesser General Public License] (LICENSE.md).
+morphing is given under the terms of the [GNU Lesser General Public License](LICENSE.md).
 
 If you use morphing in your work, please refer to the journal article: 
 
