@@ -507,8 +507,8 @@ if __name__=="__main__":
         os.makedirs(morphedFolder)
 
     #FTP info
-    ftpUsr   = "lnorgeot"#raw_input("Enter your ftp username:")
-    ftpPwd   = "Lolopolo29**"#getpass.getpass()
+    ftpUsr   = raw_input("Enter your ftp username:")
+    ftpPwd   = getpass.getpass()
     IPadress = "134.157.66.224"
     ftpDir   = "Projets/FaciLe/Data/AllDataRaw"
 
