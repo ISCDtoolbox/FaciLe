@@ -50,7 +50,7 @@ if __name__=="__main__":
         print "- Dumping the data"
         print data.shape
         with open("PCA_data", 'wb') as f:
-            #pickle.dump(data, f)
+            pickle.dump(data, f)
             pickle.dump(BB, f)
 
     elif sys.argv[1] == "-REC":
@@ -69,7 +69,7 @@ if __name__=="__main__":
         print "- Loading the data"
         with open("PCA_data", 'rb') as f:
             data = pickle.load(f)
-            BB = pickle.load(f)
+            BB   = pickle.load(f)
 
         # Computing the reconstruction coefficients
         print "- Computing the coefficients"
